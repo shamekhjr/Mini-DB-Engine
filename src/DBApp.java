@@ -25,8 +25,7 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName,
-                                Hashtable<String,Object> htblColNameValue) throws DBAppException {
+    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
 
     }
 
@@ -35,10 +34,8 @@ public class DBApp {
     // htblColNameValue holds the key and new value
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
-    public void updateTable(String strTableName,
-                            String strClusteringKeyValue,
-                            Hashtable<String,Object> htblColNameValue )
-            throws DBAppException {
+    public void updateTable(String strTableName, String strClusteringKeyValue,
+                            Hashtable<String,Object> htblColNameValue ) throws DBAppException {
 
     }
 
@@ -47,22 +44,17 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName,
-                                Hashtable<String,Object> htblColNameValue)
-            throws DBAppException {
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
 
     }
 
-    public Iterator selectFromTable(SQLTerm[] arrSQLTerms,
-                                    String[] strarrOperators)
-            throws DBAppException {
+    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
         return null;
 
     }
 
     //bonus
-    public Iterator parseSQL( StringBuffer strbufSQL ) throws
-            DBAppException {
+    public Iterator parseSQL( StringBuffer strbufSQL ) throws DBAppException {
         return null;
     }
 }
