@@ -58,7 +58,7 @@ public class Table {
         String[] startAtNewLine = new String[1];
         writer.writeNext(startAtNewLine);
 
-        //filling the metadata file
+        //filling the metadata file. The order of the columns is:
         //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
         String[] metadata = new String[8];
         for (String col: htblColNameType.keySet()) {

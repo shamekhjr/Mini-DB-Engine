@@ -1,4 +1,1 @@
 Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
-"Student","gpa","java.lang.Double","False","null","null","0.0","4.0"
-"Student","name","java.lang.String","False","null","null","A","ZZZZZZZZZZZ"
-"Student","id","java.lang.Integer","True","null","null","0","1000000000"
