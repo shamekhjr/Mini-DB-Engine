@@ -2,9 +2,9 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 public class DBApp {
-    public void init( ) {
+    public void init() {
         //very bri'ish amirit
-        // ya may'
+        //ya m8
     }
 
 
