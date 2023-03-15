@@ -5,12 +5,12 @@ import java.util.Hashtable;
 import java.io.FileInputStream;
 
 public class Page {
-    private Vector <Hashtable<String, Object>> records; // contain list of hashtable which represent records
+    private Vector <Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
 
 
     public Page()
     {
-        Vector<Hashtable<String, Object>> records = new Vector<>();
+        Vector<Hashtable<String, Object>> vRecords = new Vector<>();
     }
 
     public boolean isFull ()
@@ -33,12 +33,12 @@ public class Page {
 
         int n = Integer.parseInt(_configProperties.getProperty("DBApp.MaximumRowsCountinTablePage"));
 
-        return n == records.size();
+        return n == vRecords.size();
     }
 
     public boolean isEmpty ()
     {
-        return records.isEmpty();
+        return vRecords.isEmpty();
     }
 
     public void updatePage (String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)
