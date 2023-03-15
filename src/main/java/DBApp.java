@@ -67,6 +67,7 @@ public class DBApp {
 
     public static void main(String[] args) throws DBAppException, IOException {
 
+        //testing Table class creation
         String strTableName = "Student";
         DBApp dbApp = new DBApp( );
 

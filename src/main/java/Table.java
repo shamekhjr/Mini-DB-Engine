@@ -59,4 +59,24 @@ public class Table {
         writer.close();
 
     }
+
+    public void insertIntoTable() {
+
+    }
+
+    public void deleteFromTable() {
+
+    }
+
+    public void updateTable() {
+
+    }
+
+    public void searchInTable() {
+
+    }
+
+    public void deleteTable() {
+
+    }
 }
