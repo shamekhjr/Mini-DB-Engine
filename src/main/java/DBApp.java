@@ -1,3 +1,5 @@
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.io.*;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -21,7 +23,7 @@ public class DBApp {
     // for data in the column. Key is the name of the column
     public void createTable(String strTableName, String strClusteringKeyColumn,
                             Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
-                            Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException {
+                            Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException, CsvValidationException {
 
         Table table = new Table(strTableName, strClusteringKeyColumn,
                 htblColNameType, htblColNameMin,
@@ -65,7 +67,7 @@ public class DBApp {
         return null;
     }
 
-    public static void main(String[] args) throws DBAppException, IOException {
+    public static void main(String[] args) throws DBAppException, IOException, CsvValidationException {
 
         //testing Table class creation
         String strTableName = "Student";

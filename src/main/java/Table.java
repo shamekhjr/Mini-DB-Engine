@@ -1,8 +1,13 @@
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
+
+import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvValidationException;
+
 public class Table {
     String sTableName;
     int iNumOfPages;
@@ -11,7 +16,7 @@ public class Table {
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
-                 Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException {
+                 Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
@@ -32,6 +37,17 @@ public class Table {
                     !htblColNameType.get(key).equals("java.lang.Double") &&
                     !htblColNameType.get(key).equals("java.util.Date")) {
                     throw new DBAppException("Invalid data type for column " + key);
+            }
+        }
+
+        //declaring csv reader
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+
+        //check if table name already exists
+        String[] line;
+        while ((line = reader.readNext()) != null) {
+            if (line[0].equals(strTableName)) {
+                throw new DBAppException("A table with this name already exists");
             }
         }
 
