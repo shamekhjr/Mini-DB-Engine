@@ -19,7 +19,11 @@ public class DBApp {
     // for data in the column. Key is the name of the column
     public void createTable(String strTableName, String strClusteringKeyColumn,
                             Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
-                            Hashtable<String,String> htblColNameMax ) throws DBAppException {
+                            Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException {
+
+        Table table = new Table(strTableName, strClusteringKeyColumn,
+                htblColNameType, htblColNameMin,
+                htblColNameMax);
 
     }
 
