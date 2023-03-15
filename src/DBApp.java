@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -9,7 +10,7 @@ public class DBApp {
 
     }
 
-
+    //edit al niggaz
     // following method creates one table only
     // strClusteringKeyColumn is the name of the column that will be the primary
     // key and the clustering column as well. The data type of that column will
@@ -59,4 +60,37 @@ public class DBApp {
     public Iterator parseSQL( StringBuffer strbufSQL ) throws DBAppException {
         return null;
     }
+
+//    public static void main(String[] args) {
+//        try {
+//            FileOutputStream fileOut =
+//                    new FileOutputStream("trial.class");
+//            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+//            out.writeObject("Hello World");
+//            out.close();
+//            fileOut.close();
+//            System.out.println("serialized in trial.class");
+//        } catch (IOException i) {
+//            i.printStackTrace();
+//        }
+//
+//        String help = "";
+//
+//        try {
+//            FileInputStream fileIn = new FileInputStream("trial.class");
+//            ObjectInputStream in = new ObjectInputStream(fileIn);
+//            help = (String) in.readObject();
+//            in.close();
+//            fileIn.close();
+//        } catch (IOException i) {
+//            i.printStackTrace();
+//            return;
+//        } catch (ClassNotFoundException c) {
+//            System.out.println("Data not found");
+//            c.printStackTrace();
+//            return;
+//        }
+//
+//        System.out.println("Deserialized: " + help);
+//    }
 }
