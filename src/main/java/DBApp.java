@@ -1,3 +1,5 @@
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.io.*;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -21,7 +23,11 @@ public class DBApp {
     // for data in the column. Key is the name of the column
     public void createTable(String strTableName, String strClusteringKeyColumn,
                             Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
-                            Hashtable<String,String> htblColNameMax ) throws DBAppException {
+                            Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException, CsvValidationException {
+
+        Table table = new Table(strTableName, strClusteringKeyColumn,
+                htblColNameType, htblColNameMin,
+                htblColNameMax);
 
     }
 
@@ -61,7 +67,30 @@ public class DBApp {
         return null;
     }
 
-//    public static void main(String[] args) {
+    public static void main(String[] args) throws DBAppException, IOException, CsvValidationException {
+
+        //testing Table class creation
+        String strTableName = "Student";
+        DBApp dbApp = new DBApp( );
+
+        Hashtable htblColNameType = new Hashtable( );
+        htblColNameType.put("id", "java.lang.Integer");
+        htblColNameType.put("name", "java.lang.String");
+        htblColNameType.put("gpa", "java.lang.Double");
+
+        Hashtable htblColNameMin = new Hashtable( );
+        htblColNameMin.put("id", "0");
+        htblColNameMin.put("name", "A");
+        htblColNameMin.put("gpa", "0.0");
+
+        Hashtable htblColNameMax = new Hashtable( );
+        htblColNameMax.put("id", "1000000000");
+        htblColNameMax.put("name","ZZZZZZZZZZZ");
+        htblColNameMax.put("gpa", "4.0");
+
+
+        dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
+
 //        try {
 //            FileOutputStream fileOut =
 //                    new FileOutputStream("trial.class");
@@ -92,5 +121,5 @@ public class DBApp {
 //        }
 //
 //        System.out.println("Deserialized: " + help);
-//    }
+    }
 }
