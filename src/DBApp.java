@@ -7,7 +7,7 @@ public class DBApp {
         //ya m8
     }
 
-
+    //edit al niggaz
     // following method creates one table only
     // strClusteringKeyColumn is the name of the column that will be the primary
     // key and the clustering column as well. The data type of that column will
