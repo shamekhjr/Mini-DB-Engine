@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.Hashtable;
-import java.util.Properties;
 import java.util.Vector;
 
 import com.opencsv.CSVReader;
@@ -15,23 +14,22 @@ public class Table implements java.io.Serializable {
     int iNumOfRows;
     Hashtable<Integer, Boolean> hPageFullStatus;
     Vector<rangePair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
-    Vector<Integer> vNumberOfRowsPerPage;
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                  Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
+
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
-        this.vNumberOfRowsPerPage = new Vector<>();
-        this.vecMinMaxOfPagesForClusteringKey = new Vector<>();
+        this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Object,Object>>();
         this.sClusteringKey = strClusteringKeyColumn;
 
         //check if the table sizes match
         if (htblColNameType.size() != htblColNameMin.size() ||
                 htblColNameType.size() != htblColNameMax.size()) {
-            throw new DBAppException("Number of Columns does not match their given properties");
+            throw new DBAppException("Table sizes do not match");
         }
 
         //making sure column data types are valid
@@ -82,46 +80,15 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws IOException, CsvValidationException {
-        /* NOTES:
-            - check for input (size and datatypes), (Note: date acceptable format is "YYYY-MM-DD")
+    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) {
+        //NOTES:
+        /*
             - don't insert more than N (consult DBApp.config)
             - always update minMax
             - save page after modification/creation
             - save table at the end
             - fill fullStatus HashTable
-            - fill vNumberOfPagesPerRow
         */
-
-        // check for input data validity
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-        String[] line;
-        while ((line = reader.readNext()) != null) {
-            // Process each line of the CSV file
-            for (String field : line) {
-                System.out.print(field + " ");
-            }
-            System.out.println();
-        }
-
-
-        // fetch max page size
-        String sFilename = "DBApp.config";
-        Properties configProperties = new Properties();
-
-        try {
-            FileInputStream fis = new FileInputStream(sFilename);
-            configProperties.load(fis);
-        }
-        catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-        }
-        catch (IOException e)  {
-            e.printStackTrace();
-        }
-
-        int N = Integer.parseInt(configProperties.getProperty("DBApp.MaximumRowsCountinTablePage"));
-
         // check if this is the first insert
         if (iNumOfPages == 0) {
             iNumOfPages++;
@@ -153,7 +120,19 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    public void deleteFromTable() {
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) {
+
+        //TODO
+        //1- search for all relevant records based on conditions
+        //2- remove the records in descending order (akher index fe akher page le awel index fe awel page)
+        //3- update minMax
+        //4- inter-vector shiftation
+        //5- re-serialize and save pages
+
+        //search for all relevant data given the conditions
+        Vector<Pair<Integer,Hashtable<String,Object>>> vRelevantRecords = searchRecords(htblColNameValue);
+
+
 
     }
 
@@ -168,10 +147,11 @@ public class Table implements java.io.Serializable {
                 call search then update
             goodluck future implementer :)
         */
+
     }
 
     public void searchInTable() {
-        // use searchRecords instead?
+
     }
 
     public void deleteTable() {
@@ -179,6 +159,7 @@ public class Table implements java.io.Serializable {
     }
 
     public void serializeTable() {
+
         try {
             FileOutputStream fos = new FileOutputStream(sTableName+".class");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -190,9 +171,10 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    // chad search; serves selectFromTable, deleteFromTable (supplies the records and their locations: page, index)
-    public Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
-        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> result = new Vector<>();
+    // chad search; serves selectFromTable, deleteFromTable
+    public Vector<Pair<Integer,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
+
+        Vector<Pair<Integer,Hashtable<String, Object>>> result = new Vector<>();
         Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
@@ -213,18 +195,7 @@ public class Table implements java.io.Serializable {
                         } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {
                             hi = mid - 1;
                         } else {
-                            // check other conditions
-                            Hashtable<String, Object> hCurrRecord = vRecords.get(mid);
-                            boolean bAllSatisfied = true;
-                            for (String col : hCondition.keySet()) {
-                                if (!hCondition.get(col).equals(hCurrRecord.get(col))) {
-                                    bAllSatisfied = false;
-                                    break;
-                                }
-                            }
-
-                            if (bAllSatisfied)
-                                result.add(new Pair<>((new Pair<>(i, mid)), hCurrRecord));
+                            result.add(new Pair<>(mid, vRecords.get(mid)));
                             break;
                         }
                     }
@@ -251,8 +222,7 @@ public class Table implements java.io.Serializable {
                         }
                     }
 
-                    if (bAllSatisfied)
-                        result.add(new Pair<>((new Pair<>(i, index)), ht));
+                    if (bAllSatisfied) result.add(new Pair<>(index, ht));
 
                     index++;
                 }

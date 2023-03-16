@@ -1,3 +1,5 @@
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.*;
@@ -57,7 +59,52 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException, CsvException {
+
+        //declaring csv reader
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+
+        //check if table exists
+        String[] line;
+        while ((line = reader.readNext()) != null) {
+            if (line[0].equals(strTableName)) {
+
+                //load table
+                Table tTable = Table.loadTable(strTableName);
+
+                //check that column names and types are valid
+                for (String key : htblColNameValue.keySet()) {
+
+                    //look in metadata file for column name
+                    boolean found = false;
+                    for (String[] line2 : reader.readAll()) {
+                        //reminder:
+                        //line2[0] = table name
+                        //line2[1] = column name
+                        //line2[2] = column type
+
+                        if (line2[0].equals(strTableName) && line2[1].equals(key)) {
+                            found = true;
+
+                            //check that column type is valid
+                            //since the column exists in metadata file we are sure the column type should
+                            //be one of the following: java.lang.Integer, java.lang.String,
+                            // java.lang.Double
+                            if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
+                                throw new DBAppException("Invalid column type for deletion");
+                            }
+                            break;
+                        }
+                        throw new DBAppException("Invalid column name for deletion");
+                    }
+                }
+
+                //delete from table
+                tTable.deleteFromTable(strTableName, htblColNameValue);
+                return;
+            }
+        }
+        throw new DBAppException("Table does not exist");
 
     }
 
