@@ -104,7 +104,6 @@ public class Table implements java.io.Serializable {
             System.out.println();
         }
 
-
         // fetch max page size
         String sFilename = "DBApp.config";
         Properties configProperties = new Properties();
