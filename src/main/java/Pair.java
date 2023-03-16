@@ -6,4 +6,9 @@ public class Pair<Mn, Mx> {
         this.min = min;
         this.max = max;
     }
+
+    public void updateMinMax(Mn min, Mx Max) {
+        this.min = min;
+        this.max = max;
+    }
 }
