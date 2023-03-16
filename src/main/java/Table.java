@@ -18,6 +18,7 @@ public class Table implements java.io.Serializable {
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                  Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
+
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
@@ -119,8 +120,13 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    public void deleteFromTable() {
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) {
 
+        //1- search for all relevant records based on conditions
+        //2- remove the records in descending order (akher index fe akher page le awel index fe awel page)
+        //3- update minMax
+        //4- inter-vector shiftation
+//5     //5- re-serialize and save pages
     }
 
     public void updateTable() {
@@ -146,6 +152,7 @@ public class Table implements java.io.Serializable {
     }
 
     public void serializeTable() {
+
         try {
             FileOutputStream fos = new FileOutputStream(sTableName+".class");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -159,6 +166,7 @@ public class Table implements java.io.Serializable {
 
     // chad search; serves selectFromTable, deleteFromTable
     public Vector<Pair<Integer,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
+
         Vector<Pair<Integer,Hashtable<String, Object>>> result = new Vector<>();
         Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
 
