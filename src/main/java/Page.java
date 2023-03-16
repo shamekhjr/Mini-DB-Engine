@@ -5,12 +5,17 @@ import java.util.Hashtable;
 import java.io.FileInputStream;
 
 public class Page {
-    private Vector <Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
+    public Vector <Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
 
 
     public Page()
     {
-        Vector<Hashtable<String, Object>> vRecords = new Vector<>();
+        this.vRecords = new Vector<>();
+    }
+
+    public Page(Vector<Hashtable<String, Object>> vRecords)
+    {
+        this.vRecords = vRecords;
     }
 
     public boolean isFull ()
@@ -39,6 +44,11 @@ public class Page {
     public boolean isEmpty ()
     {
         return vRecords.isEmpty();
+    }
+
+    public int size ()
+    {
+        return vRecords.size();
     }
 
     public void updatePage (String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)

@@ -29,6 +29,16 @@ public class DBApp {
                 htblColNameType, htblColNameMin,
                 htblColNameMax);
 
+        // save the table to hard disk
+        try {
+            FileOutputStream fos = new FileOutputStream(table.sTableName+".class");
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(table);
+            oos.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
