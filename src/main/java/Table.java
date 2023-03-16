@@ -1,6 +1,4 @@
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -10,9 +8,10 @@ import com.opencsv.exceptions.CsvValidationException;
 
 public class Table {
     String sTableName;
+    String sClusteringKey;
     int iNumOfPages;
     int iNumOfRows;
-    Vector<Pair<Integer,Integer>> vecMinMaxOfPagesForClusteringKey;
+    Vector<Pair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
@@ -20,7 +19,8 @@ public class Table {
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
-        this.vecMinMaxOfPagesForClusteringKey = new Vector<Pair<Integer,Integer>>();
+        this.vecMinMaxOfPagesForClusteringKey = new Vector<Pair<Object,Object>>();
+        this.sClusteringKey = strClusteringKeyColumn;
 
         //check if the table sizes match
         if (htblColNameType.size() != htblColNameMin.size() ||
@@ -94,5 +94,76 @@ public class Table {
 
     public void deleteTable() {
 
+    }
+
+    public Vector<Hashtable<String,Object>> searchRecords(Hashtable<String,Object> hCondition) {
+        Vector<Hashtable<String, Object>> result = new Vector<>();
+        Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
+
+        // Check approach: Cluster Key present ? Binary Search : Linear search
+        if (hCondition.keySet().contains(sClusteringKey)) { // eles go, binary search
+            Object oClusterValue = hCondition.get(sClusteringKey);
+            // consult hanti-kanti-ultra-omega-gadaym-speedy minProMax vector to fetch da page
+            for (int i = 0; i < iNumOfPages; i++) {
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
+                && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
+                    try {
+                        FileInputStream fis = new FileInputStream(sTableName+"_page"+ i + ".class");
+                        ObjectInputStream ois = new ObjectInputStream(fis);
+                        vRecords = (Vector<Hashtable<String, Object>>) ois.readObject();
+                        ois.close();
+                        fis.close();
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    // binary search
+                    Page pCurrentPage = new Page(vRecords);
+                    int lo = 0;
+                    int hi = pCurrentPage.size() - 1;
+                    while (lo <= hi) {
+                        // hmm... problem: binary search returns 1 val
+                        // does he want to binary search on pages?
+                        // like try middle page then go left or right accordingly?
+                        // DEAD LOCK :/
+                        // hours wasted counter: 2h
+                    }
+
+                }
+            }
+
+
+        } else { // no clustering key :(, search linearly
+            // for each page
+            for (int i = 0; i < iNumOfPages; i++) {
+                // load (de-serialize the page)
+                try {
+                    FileInputStream fis = new FileInputStream(sTableName+"_page"+ i + ".class");
+                    ObjectInputStream ois = new ObjectInputStream(fis);
+                    vRecords = (Vector<Hashtable<String, Object>>) ois.readObject();
+                    ois.close();
+                    fis.close();
+                    System.out.println("Object deserialized from outputFile.class");
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                // for each record in page
+                for (Hashtable<String, Object> ht : vRecords) {
+                    // for each key in condition, compare with current record
+                    boolean bAllSatisfied = true;
+                    for (String col : hCondition.keySet()) {
+                        if (!hCondition.get(col).equals(ht.get(col))) {
+                            bAllSatisfied = false;
+                            break;
+                        }
+                    }
+
+                    if (bAllSatisfied) result.add(ht);
+                }
+            }
+        }
+
+        return result;
     }
 }
