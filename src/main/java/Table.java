@@ -6,7 +6,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 
-public class Table {
+public class Table implements java.io.Serializable {
     String sTableName;
     String sClusteringKey;
     int iNumOfPages;
