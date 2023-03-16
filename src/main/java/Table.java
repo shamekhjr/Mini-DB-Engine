@@ -20,6 +20,7 @@ public class Table implements java.io.Serializable {
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                  Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
+
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
@@ -152,8 +153,59 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    public void deleteFromTable() {
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) {
 
+        //TODO
+        //1- search for all relevant records based on conditions (DONE)
+        //2- remove the records in descending order (akher index fe akher page le awel index fe awel page) (DONE)
+        //3- update minMax
+        //4- inter-vector shiftation
+        //5- re-serialize and save pages
+
+        //search for all relevant data given the conditions
+        //first integer is pageNumber
+        //second integer is recordIndex
+        Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> vRelevantRecords = searchRecords(htblColNameValue);
+
+        //init hashtable of pages to keep stuff in memory
+        Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
+
+        //remove the records in descending order
+        for (int i = vRelevantRecords.size() - 1; i >= 0; i--) {
+
+            //find pageNumber and recordIndexInPage
+            int iPageToLoad = vRelevantRecords.get(i).val1.val1;
+            int iRecordIndexInPage = vRelevantRecords.get(i).val1.val2;
+
+            //load the page
+            Page pPageToLoad = new Page(strTableName, iPageToLoad, true);
+            htblPagesTemp.put(iPageToLoad, pPageToLoad);
+
+            //remove the record
+            pPageToLoad.vRecords.remove(iRecordIndexInPage);
+
+            //decrement number of rows in the page
+            this.vNumberOfRowsPerPage.set(iPageToLoad, vNumberOfRowsPerPage.get(iPageToLoad) - 1);
+
+            //update hPageFullStatus
+            hPageFullStatus.put(iPageToLoad, false);
+        }
+
+        //inter-vector shiftation
+        for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
+
+            //check if page is not full
+            //if it is not full, i know i should get values from next non-empty pages and insert
+            if(!hPageFullStatus.get(k)) {
+                for (int j = k + 1; j < this.iNumOfPages; j++) {
+
+                    if (vNumberOfRowsPerPage.get(j) > 0) {
+                        //we need to remove records from this page and put them in page k
+                    }
+                }
+            }
+
+        }
     }
 
     public void updateTable() {

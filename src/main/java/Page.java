@@ -145,7 +145,7 @@ public class Page implements Serializable {
         }
     }
 
-    // depreciated
+    // deprecated
     public void deserializePage() {
         try {
             FileInputStream fis = new FileInputStream(this.sTableName+"_page"+ index + ".class");

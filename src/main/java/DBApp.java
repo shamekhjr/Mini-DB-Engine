@@ -141,36 +141,5 @@ public class DBApp {
 
 
         dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
-
-//        try {
-//            FileOutputStream fileOut =
-//                    new FileOutputStream("trial.class");
-//            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-//            out.writeObject("Hello World");
-//            out.close();
-//            fileOut.close();
-//            System.out.println("serialized in trial.class");
-//        } catch (IOException i) {
-//            i.printStackTrace();
-//        }
-//
-//        String help = "";
-//
-//        try {
-//            FileInputStream fileIn = new FileInputStream("trial.class");
-//            ObjectInputStream in = new ObjectInputStream(fileIn);
-//            help = (String) in.readObject();
-//            in.close();
-//            fileIn.close();
-//        } catch (IOException i) {
-//            i.printStackTrace();
-//            return;
-//        } catch (ClassNotFoundException c) {
-//            System.out.println("Data not found");
-//            c.printStackTrace();
-//            return;
-//        }
-//
-//        System.out.println("Deserialized: " + help);
     }
 }
