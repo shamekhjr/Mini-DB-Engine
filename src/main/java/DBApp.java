@@ -36,7 +36,7 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
+    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException {
         // load table data from hard disk
         Table tTable = Table.loadTable(strTableName);
         tTable.insertIntoTable(htblColNameValue);

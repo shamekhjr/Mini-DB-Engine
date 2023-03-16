@@ -161,4 +161,9 @@ public class Page implements Serializable {
             e.printStackTrace();
         }
     }
+
+    // delete page
+    public void deletePage() {
+        //TODO search for delete code
+    }
 }

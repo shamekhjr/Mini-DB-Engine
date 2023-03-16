@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.Hashtable;
+import java.util.Properties;
 import java.util.Vector;
 
 import com.opencsv.CSVReader;
@@ -14,6 +15,7 @@ public class Table implements java.io.Serializable {
     int iNumOfRows;
     Hashtable<Integer, Boolean> hPageFullStatus;
     Vector<rangePair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
+    Vector<Integer> vNumberOfRowsPerPage;
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
@@ -22,13 +24,14 @@ public class Table implements java.io.Serializable {
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
-        this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Object,Object>>();
+        this.vNumberOfRowsPerPage = new Vector<>();
+        this.vecMinMaxOfPagesForClusteringKey = new Vector<>();
         this.sClusteringKey = strClusteringKeyColumn;
 
         //check if the table sizes match
         if (htblColNameType.size() != htblColNameMin.size() ||
                 htblColNameType.size() != htblColNameMax.size()) {
-            throw new DBAppException("Table sizes do not match");
+            throw new DBAppException("Number of Columns does not match their given properties");
         }
 
         //making sure column data types are valid
@@ -79,15 +82,46 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) {
-        //NOTES:
-        /*
+    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws IOException, CsvValidationException {
+        /* NOTES:
+            - check for input (size and datatypes), (Note: date acceptable format is "YYYY-MM-DD")
             - don't insert more than N (consult DBApp.config)
             - always update minMax
             - save page after modification/creation
             - save table at the end
             - fill fullStatus HashTable
+            - fill vNumberOfPagesPerRow
         */
+
+        // check for input data validity
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        String[] line;
+        while ((line = reader.readNext()) != null) {
+            // Process each line of the CSV file
+            for (String field : line) {
+                System.out.print(field + " ");
+            }
+            System.out.println();
+        }
+
+
+        // fetch max page size
+        String sFilename = "DBApp.config";
+        Properties configProperties = new Properties();
+
+        try {
+            FileInputStream fis = new FileInputStream(sFilename);
+            configProperties.load(fis);
+        }
+        catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+        }
+        catch (IOException e)  {
+            e.printStackTrace();
+        }
+
+        int N = Integer.parseInt(configProperties.getProperty("DBApp.MaximumRowsCountinTablePage"));
+
         // check if this is the first insert
         if (iNumOfPages == 0) {
             iNumOfPages++;
@@ -134,11 +168,10 @@ public class Table implements java.io.Serializable {
                 call search then update
             goodluck future implementer :)
         */
-
     }
 
     public void searchInTable() {
-
+        // use searchRecords instead?
     }
 
     public void deleteTable() {
@@ -157,9 +190,9 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    // chad search; serves selectFromTable, deleteFromTable
-    public Vector<Pair<Integer,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
-        Vector<Pair<Integer,Hashtable<String, Object>>> result = new Vector<>();
+    // chad search; serves selectFromTable, deleteFromTable (supplies the records and their locations: page, index)
+    public Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
+        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> result = new Vector<>();
         Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
@@ -180,7 +213,18 @@ public class Table implements java.io.Serializable {
                         } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {
                             hi = mid - 1;
                         } else {
-                            result.add(new Pair<>(mid, vRecords.get(mid)));
+                            // check other conditions
+                            Hashtable<String, Object> hCurrRecord = vRecords.get(mid);
+                            boolean bAllSatisfied = true;
+                            for (String col : hCondition.keySet()) {
+                                if (!hCondition.get(col).equals(hCurrRecord.get(col))) {
+                                    bAllSatisfied = false;
+                                    break;
+                                }
+                            }
+
+                            if (bAllSatisfied)
+                                result.add(new Pair<>((new Pair<>(i, mid)), hCurrRecord));
                             break;
                         }
                     }
@@ -207,7 +251,8 @@ public class Table implements java.io.Serializable {
                         }
                     }
 
-                    if (bAllSatisfied) result.add(new Pair<>(index, ht));
+                    if (bAllSatisfied)
+                        result.add(new Pair<>((new Pair<>(i, index)), ht));
 
                     index++;
                 }
