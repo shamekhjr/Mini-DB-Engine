@@ -124,6 +124,16 @@ public class Table implements java.io.Serializable {
     }
 
     public void updateTable() {
+        /* 2 cases:
+            1- updating a value of the cluster key
+            2- updating a values not related to the cluster key
+
+            for case 1:
+                call delete method then call insert with the updated record
+            for case 2:
+                call search then update
+            goodluck future implementer :)
+        */
 
     }
 
