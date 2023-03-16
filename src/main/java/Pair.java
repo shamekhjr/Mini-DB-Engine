@@ -1,14 +1,9 @@
-public class Pair<Mn, Mx> {
-    public Mn min;
-    public Mx max;
+public class Pair<V1, V2> {
+    public V1 val1;
+    public V2 val2;
 
-    public Pair(Mn min, Mx max) {
-        this.min = min;
-        this.max = max;
-    }
-
-    public void updateMinMax(Mn min, Mx Max) {
-        this.min = min;
-        this.max = max;
+    public Pair(V1 val1, V2 val2) {
+        this.val1 = val1;
+        this.val2 = val2;
     }
 }

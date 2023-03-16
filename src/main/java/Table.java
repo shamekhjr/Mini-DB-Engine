@@ -6,12 +6,14 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 
+
 public class Table implements java.io.Serializable {
     String sTableName;
     String sClusteringKey;
     int iNumOfPages;
     int iNumOfRows;
-    Vector<Pair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
+    Hashtable<Integer, Boolean> hPageFullStatus;
+    Vector<rangePair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
@@ -19,7 +21,8 @@ public class Table implements java.io.Serializable {
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
-        this.vecMinMaxOfPagesForClusteringKey = new Vector<Pair<Object,Object>>();
+        this.hPageFullStatus = new Hashtable<>();
+        this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Object,Object>>();
         this.sClusteringKey = strClusteringKeyColumn;
 
         //check if the table sizes match
@@ -76,8 +79,44 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void insertIntoTable() {
+    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) {
+        //NOTES:
+        /*
+            - don't insert more than N (consult DBApp.config)
+            - always update minMax
+            - save page after modification/creation
+            - save table at the end
+            - fill fullStatus HashTable
+        */
+        // check if this is the first insert
+        if (iNumOfPages == 0) {
+            iNumOfPages++;
+            Page pPage1 = new Page(sTableName, iNumOfPages - 1, false);
+            pPage1.vRecords.add(htblColNameValue);
+            Object oMinClusterVal = pPage1.vRecords.get(0).get(sClusteringKey);
+            Object oMaxClusterVal = pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
+            // update minMax vector
+            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
+            hPageFullStatus.put(iNumOfPages-1, false);
+            pPage1.serializePage();
+        } else { // insert in some page
+            Object oClusterValue = htblColNameValue.get(sClusteringKey);
+            int iInsertPageNum = 0;
+            Page pInsertPage = null;
+            // consult minMax to fetch da page
+            for (int i = 0; i < iNumOfPages; i++) {
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
+                        && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
+                    iInsertPageNum = i;
+                }
 
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) > 0) {
+                    break;
+                }
+            }
+            //pInsertPage = new Page()
+
+        }
     }
 
     public void deleteFromTable() {
@@ -96,8 +135,21 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public Vector<Hashtable<String,Object>> searchRecords(Hashtable<String,Object> hCondition) {
-        Vector<Hashtable<String, Object>> result = new Vector<>();
+    public void serializeTable() {
+        try {
+            FileOutputStream fos = new FileOutputStream(sTableName+".class");
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this);
+            oos.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // chad search; serves selectFromTable, deleteFromTable
+    public Vector<Pair<Integer,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
+        Vector<Pair<Integer,Hashtable<String, Object>>> result = new Vector<>();
         Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
@@ -107,28 +159,22 @@ public class Table implements java.io.Serializable {
             for (int i = 0; i < iNumOfPages; i++) {
                 if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
                 && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
-                    try {
-                        FileInputStream fis = new FileInputStream(sTableName+"_page"+ i + ".class");
-                        ObjectInputStream ois = new ObjectInputStream(fis);
-                        vRecords = (Vector<Hashtable<String, Object>>) ois.readObject();
-                        ois.close();
-                        fis.close();
-                    } catch (IOException | ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-
-                    // binary search
-                    Page pCurrentPage = new Page(vRecords);
+                    // binary search (only one row has this primary cluster key)
+                    Page pCurrentPage = new Page(sTableName, i, true);
                     int lo = 0;
                     int hi = pCurrentPage.size() - 1;
                     while (lo <= hi) {
-                        // hmm... problem: binary search returns 1 val
-                        // does he want to binary search on pages?
-                        // like try middle page then go left or right accordingly?
-                        // DEAD LOCK :/
-                        // hours wasted counter: 2h
+                        int mid = (lo + hi) / 2;
+                        if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) < 0) {
+                            lo = mid + 1;
+                        } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {
+                            hi = mid - 1;
+                        } else {
+                            result.add(new Pair<>(mid, vRecords.get(mid)));
+                            break;
+                        }
                     }
-
+                    break; // cuz only one page has this primary cluster key
                 }
             }
 
@@ -137,19 +183,11 @@ public class Table implements java.io.Serializable {
             // for each page
             for (int i = 0; i < iNumOfPages; i++) {
                 // load (de-serialize the page)
-                try {
-                    FileInputStream fis = new FileInputStream(sTableName+"_page"+ i + ".class");
-                    ObjectInputStream ois = new ObjectInputStream(fis);
-                    vRecords = (Vector<Hashtable<String, Object>>) ois.readObject();
-                    ois.close();
-                    fis.close();
-                    System.out.println("Object deserialized from outputFile.class");
-                } catch (IOException | ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
+                Page pCurrentPage = new Page(sTableName, i, true);
 
+                int index = 0;
                 // for each record in page
-                for (Hashtable<String, Object> ht : vRecords) {
+                for (Hashtable<String, Object> ht : pCurrentPage.vRecords) {
                     // for each key in condition, compare with current record
                     boolean bAllSatisfied = true;
                     for (String col : hCondition.keySet()) {
@@ -159,11 +197,28 @@ public class Table implements java.io.Serializable {
                         }
                     }
 
-                    if (bAllSatisfied) result.add(ht);
+                    if (bAllSatisfied) result.add(new Pair<>(index, ht));
+
+                    index++;
                 }
             }
         }
 
         return result;
+    }
+
+    public static Table loadTable (String sTableName) {
+        Table tTable = null;
+        try {
+            FileInputStream fis = new FileInputStream(sTableName+".class");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            tTable = (Table) ois.readObject();
+            ois.close();
+            fis.close();
+            return (Table) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return tTable;
     }
 }

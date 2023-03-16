@@ -10,11 +10,31 @@ public class Page implements Serializable {
 
 
 
-    public Page(String sTable, int index)
+    public Page(String sTable, int index, Boolean load)
     {
         this.vRecords = new Vector<>();
         this.sTableName = sTable;
         this.index = index;
+        // load page
+        if (load) {
+            try {
+                FileInputStream fis = new FileInputStream(this.sTableName + "_page" + index + ".class");
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                this.vRecords = (Vector<Hashtable<String, Object>>) ois.readObject();
+                ois.close();
+                fis.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public int size() {
+        return vRecords.size();
     }
 
     public boolean isFull ()
@@ -55,7 +75,7 @@ public class Page implements Serializable {
 
     public void deleteRecord(Hashtable<String, Object> htblColNameValue)
     {
-        this.deserializePage();
+        //this.deserializePage();
         Vector<Hashtable<String, Object>> tempvRecords = this.searchPage(htblColNameValue);
         int sizeOfPage = tempvRecords.size();
 
@@ -66,7 +86,7 @@ public class Page implements Serializable {
     }
 
     public Vector<Hashtable<String, Object>> searchPage(Hashtable<String, Object> hCondition) {
-        this.deserializePage();
+        //this.deserializePage();
 
         Vector<Hashtable<String, Object>> rvRecords = new Vector<>(); // the result of search could be a list of records
         int sizeOfPage = vRecords.size();
@@ -125,6 +145,7 @@ public class Page implements Serializable {
         }
     }
 
+    // depreciated
     public void deserializePage() {
         try {
             FileInputStream fis = new FileInputStream(this.sTableName+"_page"+ index + ".class");

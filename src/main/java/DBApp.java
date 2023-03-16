@@ -30,22 +30,16 @@ public class DBApp {
                 htblColNameMax);
 
         // save the table to hard disk
-        try {
-            FileOutputStream fos = new FileOutputStream(table.sTableName+".class");
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(table);
-            oos.close();
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        table.serializeTable();
     }
 
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
-
+        // load table data from hard disk
+        Table tTable = Table.loadTable(strTableName);
+        tTable.insertIntoTable(htblColNameValue);
     }
 
 
