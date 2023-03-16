@@ -21,6 +21,7 @@ public class Table implements java.io.Serializable {
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                  Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
 
+        //initializing instance vars
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;

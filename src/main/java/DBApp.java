@@ -27,6 +27,7 @@ public class DBApp {
                             Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                             Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException, CsvValidationException {
 
+        //create instance of Table class
         Table table = new Table(strTableName, strClusteringKeyColumn,
                 htblColNameType, htblColNameMin,
                 htblColNameMax);
