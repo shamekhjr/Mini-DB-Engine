@@ -191,5 +191,11 @@ public class DBApp {
             put("gpa", 0.34);
         }});
 
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 12);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
     }
 }
