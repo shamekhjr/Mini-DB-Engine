@@ -3,7 +3,7 @@ import java.util.*;
 import java.util.Hashtable;
 
 public class Page implements Serializable {
-    public Vector <Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
+    public Vector<Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
     public String sTableName;
     public String sClusteringKey;
     public int index;
@@ -68,6 +68,7 @@ public class Page implements Serializable {
         // binary search the position to insert into
         int lo = 0;
         int hi = vRecords.size() - 1;
+        //System.out.println(hi);
         int mid = (lo + hi) / 2;
         while (lo < hi - 1) {
             Hashtable<String, Object> hMidRow = vRecords.get(mid);

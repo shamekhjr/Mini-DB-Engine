@@ -142,11 +142,54 @@ public class DBApp {
         htblColNameMax.put("gpa", "4.0");
 
 
-        //dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
+        dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
+
         dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 2);
+            put("id", 1);
             put("name", "Ahmed");
             put("gpa", 0.9);
         }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 2);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 3);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 5);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 4);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 6);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 0);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 12);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
     }
 }

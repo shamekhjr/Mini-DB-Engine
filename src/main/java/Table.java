@@ -163,6 +163,7 @@ public class Table implements java.io.Serializable {
 
             pInsertPage = new Page(sTableName, iInsertPageNum, true);
 
+
             boolean bIsFull = false;
             if (pInsertPage.isFull()) {
                 bIsFull = true;
@@ -453,7 +454,7 @@ public class Table implements java.io.Serializable {
             result = Long.compare(input_date, d);
         } else if (clazz == String.class) {
             String input_string = (String) input;
-            result = input_string.compareTo(csv);
+            result = input_string.length()-csv.length();
         }
         return result;
 
