@@ -43,6 +43,7 @@ public class DBApp {
         // load table data from hard disk
         Table tTable = Table.loadTable(strTableName);
         tTable.insertIntoTable(htblColNameValue);
+        tTable.serializeTable();
     }
 
 
@@ -141,6 +142,11 @@ public class DBApp {
         htblColNameMax.put("gpa", "4.0");
 
 
-        dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
+        //dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 1);
+            put("name", "Ahmed");
+            put("gpa", 0.9);
+        }});
     }
 }

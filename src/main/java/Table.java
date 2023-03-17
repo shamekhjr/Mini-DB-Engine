@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.Hashtable;
-import java.util.Properties;
 import java.util.Vector;
 
 import com.opencsv.CSVReader;
@@ -14,7 +13,7 @@ public class Table implements java.io.Serializable {
     int iNumOfPages;
     int iNumOfRows;
     Hashtable<Integer, Boolean> hPageFullStatus;
-    Vector<rangePair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
+    Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey;
     Vector<Integer> vNumberOfRowsPerPage;
 
     public Table(String strTableName, String strClusteringKeyColumn,
@@ -27,7 +26,7 @@ public class Table implements java.io.Serializable {
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
         this.vNumberOfRowsPerPage = new Vector<>();
-        this.vecMinMaxOfPagesForClusteringKey = new Vector<>();
+        this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Serializable, Serializable>>();
         this.sClusteringKey = strClusteringKeyColumn;
 
         //check if the table sizes match
@@ -84,15 +83,13 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws IOException, CsvValidationException {
+    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws IOException, CsvValidationException, DBAppException {
         /* NOTES:
             - check for input (size and datatypes), (Note: date acceptable format is "YYYY-MM-DD")
             - don't insert more than N (consult DBApp.config)
-            - always update minMax
+            - always update minMax, hPageFullStatus, vNumberOfRowsPerPage, iNumOfPages, iNumOfRows
             - save page after modification/creation
-            - save table at the end
-            - fill fullStatus HashTable
-            - fill vNumberOfPagesPerRow
+            - save table at the end (done in DBApp.java)
         */
 
         // check for input data validity
@@ -101,38 +98,43 @@ public class Table implements java.io.Serializable {
         while ((line = reader.readNext()) != null) {
             // Process each line of the CSV file
             for (String field : line) {
-                System.out.print(field + " ");
+               if (field.equals(sTableName)) {
+                   // check for data type
+                   if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
+                       throw new DBAppException("Invalid data type for column " + line[1]);
+                   }
+                   // check for min and max
+//                   System.out.println(htblColNameValue.get(line[1]) + " " + line[6]);
+//                   if (((Comparable)htblColNameValue.get(line[1])).compareTo((htblColNameValue.get(line[1]).getClass().cast(line[6]))) < 0
+//                           || ((Comparable)htblColNameValue.get(line[1])).compareTo((htblColNameValue.get(line[1]).getClass().cast(line[7]))) > 0) {
+//                       throw new DBAppException("Value for column " + line[1] + " is out of range");
+//                   }
+
+                   // check if date in input is in the correct format "YYYY-MM-DD"
+                   if (line[2].equals("java.util.Date")) {
+                       String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                       if (date.length != 3) {
+                           throw new DBAppException("Invalid date format for column " + line[1]);
+                       }
+                       if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
+                           throw new DBAppException("Invalid date format for column " + line[1]);
+                       }
+                   }
+               }
             }
-            System.out.println();
         }
-
-        // fetch max page size
-        String sFilename = "DBApp.config";
-        Properties configProperties = new Properties();
-
-        try {
-            FileInputStream fis = new FileInputStream(sFilename);
-            configProperties.load(fis);
-        }
-        catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-        }
-        catch (IOException e)  {
-            e.printStackTrace();
-        }
-
-        int N = Integer.parseInt(configProperties.getProperty("DBApp.MaximumRowsCountinTablePage"));
 
         // check if this is the first insert
         if (iNumOfPages == 0) {
             iNumOfPages++;
             Page pPage1 = new Page(sTableName, iNumOfPages - 1, false);
             pPage1.vRecords.add(htblColNameValue);
-            Object oMinClusterVal = pPage1.vRecords.get(0).get(sClusteringKey);
-            Object oMaxClusterVal = pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
+            Serializable oMinClusterVal = (Serializable) pPage1.vRecords.get(0).get(sClusteringKey);
+            Serializable oMaxClusterVal = (Serializable) pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
             // update minMax vector
-            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
-            hPageFullStatus.put(iNumOfPages-1, false);
+            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+            hPageFullStatus.put(iNumOfPages - 1, false);
+            vNumberOfRowsPerPage.add(iNumOfPages - 1, 1);
             pPage1.serializePage();
         } else { // insert in some page
             Object oClusterValue = htblColNameValue.get(sClusteringKey);
@@ -149,9 +151,106 @@ public class Table implements java.io.Serializable {
                     break;
                 }
             }
-            //pInsertPage = new Page()
+            pInsertPage = new Page(sTableName, iInsertPageNum, false);
 
+            boolean bIsFull = false;
+            if (pInsertPage.isFull()) {
+                bIsFull = true;
+            }
+
+            // insert in page
+            pInsertPage.vRecords.add(htblColNameValue);
+
+
+            // check if page is full
+            if (bIsFull) {
+                // get the last row in the page and delete it
+                Hashtable<String, Object> htblLastRow = pInsertPage.vRecords.get(pInsertPage.size()-1);
+                pInsertPage.vRecords.remove(pInsertPage.size()-1);
+
+                // check if last page
+                if (iInsertPageNum == iNumOfPages - 1) {
+                    // insert in new page
+                    iNumOfPages++;
+                    Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
+                    pNewPage.vRecords.add(htblLastRow);
+
+                    // update minMax vector
+                    Serializable oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
+                    Serializable oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size()-1).get(sClusteringKey);
+                    vecMinMaxOfPagesForClusteringKey.add(new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                    hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
+                    vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
+                    pNewPage.serializePage();
+                } else {
+                    // loop to shift to the next pages
+                    for (int i = iInsertPageNum + 1; i < iNumOfPages; i++) {
+                        Page pPage = new Page(sTableName, i, true);
+                        if (pPage.isFull()) {
+                            // add to page and shift the extra row in this page to the next page if exists
+                            pPage.vRecords.add(htblLastRow);
+
+                            // get the last row in the page and delete it
+                            htblLastRow = pPage.vRecords.get(pPage.size()-1);
+                            pInsertPage.vRecords.remove(pPage.size()-1);
+
+                            // update minMax vector
+                            Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
+                            Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pPage.size()-1).get(sClusteringKey);
+                            vecMinMaxOfPagesForClusteringKey.set(i, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                            hPageFullStatus.put(i, pPage.isFull());
+                            vNumberOfRowsPerPage.set(i, pPage.size());
+                            pPage.serializePage();
+
+                            // check if last page
+                            if (pPage.index == iNumOfPages - 1) {
+                                // insert in new page
+                                iNumOfPages++;
+                                Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
+                                pNewPage.vRecords.add(htblLastRow);
+
+                                // update minMax vector
+                                oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
+                                oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size() - 1).get(sClusteringKey);
+                                vecMinMaxOfPagesForClusteringKey.add(new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                                hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
+                                vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
+                                pNewPage.serializePage();
+                                break;
+                            }
+                        } else { // page is not full
+                            // add to page and break
+                            pPage.vRecords.add(htblLastRow);
+
+                            // update minMax vector of insertPage
+                            Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
+                            Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
+                            vecMinMaxOfPagesForClusteringKey.set(pPage.index, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+
+                            // update page full status
+                            hPageFullStatus.put(pPage.index, pPage.isFull());
+
+                            // update number of rows in page
+                            vNumberOfRowsPerPage.set(pPage.index, pPage.size());
+                            pPage.serializePage();
+                            break;
+                        }
+                    }
+                }
+            }
+            // update minMax vector of insertPage
+            Serializable oMinClusterVal = (Serializable) pInsertPage.vRecords.get(0).get(sClusteringKey);
+            Serializable oMaxClusterVal = (Serializable) pInsertPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
+            vecMinMaxOfPagesForClusteringKey.set(iInsertPageNum, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+
+            // update page full status
+            hPageFullStatus.put(iInsertPageNum, pInsertPage.isFull());
+
+            // update number of rows in page
+            vNumberOfRowsPerPage.set(iInsertPageNum, pInsertPage.size());
+            pInsertPage.serializePage();
         }
+        iNumOfRows++;
     }
 
     public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) {
@@ -328,4 +427,6 @@ public class Table implements java.io.Serializable {
         }
         return tTable;
     }
+
+
 }
