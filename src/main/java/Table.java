@@ -421,7 +421,7 @@ public class Table implements java.io.Serializable {
             tTable = (Table) ois.readObject();
             ois.close();
             fis.close();
-            return (Table) ois.readObject();
+            return tTable;
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
