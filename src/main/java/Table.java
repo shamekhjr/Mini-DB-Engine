@@ -2,6 +2,7 @@ import java.io.*;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -14,6 +15,7 @@ public class Table implements java.io.Serializable {
     int iNumOfPages;
     int iNumOfRows;
     Hashtable<Integer, Boolean> hPageFullStatus;
+    ConcurrentSkipListSet<Object> cslsClusterValues;
     Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey;
     Vector<Integer> vNumberOfRowsPerPage;
 
@@ -130,9 +132,15 @@ public class Table implements java.io.Serializable {
         Hashtable<String, Object> hPrimaryKey = new Hashtable<>();
         hPrimaryKey.put(sClusteringKey, htblColNameValue.get(sClusteringKey));
 
-        if (searchRecords(hPrimaryKey).size() != 0) {
+//        if (searchRecords(hPrimaryKey).size() != 0) {
+//            throw new DBAppException("Primary key already exists");
+//        }
+
+        if (cslsClusterValues.contains(htblColNameValue.get(sClusteringKey))) { // instead of searching for the record
             throw new DBAppException("Primary key already exists");
         }
+
+        cslsClusterValues.add(htblColNameValue.get(sClusteringKey)); // add to the ClusterValues list
 
         // check if this is the first insert
         if (iNumOfPages == 0) {
