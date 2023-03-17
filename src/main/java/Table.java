@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -90,6 +91,7 @@ public class Table implements java.io.Serializable {
             - always update minMax, hPageFullStatus, vNumberOfRowsPerPage, iNumOfPages, iNumOfRows
             - save page after modification/creation
             - save table at the end (done in DBApp.java)
+            - check if primary key is unique
         */
 
         // check for input data validity
@@ -104,11 +106,11 @@ public class Table implements java.io.Serializable {
                        throw new DBAppException("Invalid data type for column " + line[1]);
                    }
                    // check for min and max
-//                   System.out.println(htblColNameValue.get(line[1]) + " " + line[6]);
-//                   if (((Comparable)htblColNameValue.get(line[1])).compareTo((htblColNameValue.get(line[1]).getClass().cast(line[6]))) < 0
-//                           || ((Comparable)htblColNameValue.get(line[1])).compareTo((htblColNameValue.get(line[1]).getClass().cast(line[7]))) > 0) {
-//                       throw new DBAppException("Value for column " + line[1] + " is out of range");
-//                   }
+                   castAndCompare(htblColNameValue.get(line[1]),line[6]);
+                   if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
+                           || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
+                       throw new DBAppException("Value for column " + line[1] + " is out of range");
+                   }
 
                    // check if date in input is in the correct format "YYYY-MM-DD"
                    if (line[2].equals("java.util.Date")) {
@@ -122,6 +124,14 @@ public class Table implements java.io.Serializable {
                    }
                }
             }
+        }
+
+        // check if primary key already exists
+        Hashtable<String, Object> hPrimaryKey = new Hashtable<>();
+        hPrimaryKey.put(sClusteringKey, htblColNameValue.get(sClusteringKey));
+
+        if (searchRecords(hPrimaryKey).size() != 0) {
+            throw new DBAppException("Primary key already exists");
         }
 
         // check if this is the first insert
@@ -138,12 +148,11 @@ public class Table implements java.io.Serializable {
             pPage1.serializePage();
         } else { // insert in some page
             Object oClusterValue = htblColNameValue.get(sClusteringKey);
-            int iInsertPageNum = 0;
+            int iInsertPageNum = 0; // case that the input is the smallest value
             Page pInsertPage = null;
             // consult minMax to fetch da page
             for (int i = 0; i < iNumOfPages; i++) {
-                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
-                        && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0) {
                     iInsertPageNum = i;
                 }
 
@@ -151,7 +160,8 @@ public class Table implements java.io.Serializable {
                     break;
                 }
             }
-            pInsertPage = new Page(sTableName, iInsertPageNum, false);
+
+            pInsertPage = new Page(sTableName, iInsertPageNum, true);
 
             boolean bIsFull = false;
             if (pInsertPage.isFull()) {
@@ -159,7 +169,7 @@ public class Table implements java.io.Serializable {
             }
 
             // insert in page
-            pInsertPage.vRecords.add(htblColNameValue);
+            pInsertPage.sortedInsert(htblColNameValue, sClusteringKey);
 
 
             // check if page is full
@@ -188,11 +198,11 @@ public class Table implements java.io.Serializable {
                         Page pPage = new Page(sTableName, i, true);
                         if (pPage.isFull()) {
                             // add to page and shift the extra row in this page to the next page if exists
-                            pPage.vRecords.add(htblLastRow);
+                            pPage.sortedInsert(htblLastRow, sClusteringKey);
 
                             // get the last row in the page and delete it
                             htblLastRow = pPage.vRecords.get(pPage.size()-1);
-                            pInsertPage.vRecords.remove(pPage.size()-1);
+                            pPage.vRecords.remove(pPage.size()-1);
 
                             // update minMax vector
                             Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
@@ -220,7 +230,7 @@ public class Table implements java.io.Serializable {
                             }
                         } else { // page is not full
                             // add to page and break
-                            pPage.vRecords.add(htblLastRow);
+                            pPage.sortedInsert(htblLastRow, sClusteringKey);
 
                             // update minMax vector of insertPage
                             Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
@@ -365,7 +375,7 @@ public class Table implements java.io.Serializable {
                             hi = mid - 1;
                         } else {
                             // check other conditions
-                            Hashtable<String, Object> hCurrRecord = vRecords.get(mid);
+                            Hashtable<String, Object> hCurrRecord = pCurrentPage.vRecords.get(mid);
                             boolean bAllSatisfied = true;
                             for (String col : hCondition.keySet()) {
                                 if (!hCondition.get(col).equals(hCurrRecord.get(col))) {
@@ -427,6 +437,28 @@ public class Table implements java.io.Serializable {
         }
         return tTable;
     }
+
+    public static int castAndCompare(Object input, String csv) {
+        Class<?> clazz = input.getClass();
+        int result = 0;
+        if (clazz == Double.class) {
+            Double d = Double.parseDouble(csv);
+            result = ((Double) input).compareTo(d);
+        } else if (clazz == Integer.class) {
+            Integer d = Integer.parseInt(csv);
+            result = ((Integer) input).compareTo(d);
+        } else if (clazz == Date.class) {
+            long d = Date.parse(csv);
+            long input_date = ((Date) input).getTime();
+            result = Long.compare(input_date, d);
+        } else if (clazz == String.class) {
+            String input_string = (String) input;
+            result = input_string.compareTo(csv);
+        }
+        return result;
+
+    }
+
 
 
 }

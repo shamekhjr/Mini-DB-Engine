@@ -39,7 +39,7 @@ public class Page implements Serializable {
 
     public boolean isFull ()
     {
-        String _filename = "DBApp.config"; // File that contain configuration
+        String _filename = "src/main/resources/DBApp.config"; // File that contain configuration
         Properties configProperties = new Properties();
 
         try (FileInputStream fis = new FileInputStream(_filename))
@@ -54,7 +54,7 @@ public class Page implements Serializable {
             e.printStackTrace();
         }
 
-        int n = Integer.parseInt(configProperties.getProperty("DBApp.MaximumRowsCountinTablePage"));
+        int n = Integer.parseInt(configProperties.getProperty("MaximumRowsCountinTablePage"));
 
         return (n == vRecords.size());
     }
@@ -62,6 +62,28 @@ public class Page implements Serializable {
     public boolean isEmpty ()
     {
         return vRecords.isEmpty();
+    }
+
+    public void sortedInsert(Hashtable<String,Object> hInsertRow, String sClusteringKey) {
+        // binary search the position to insert into
+        int lo = 0;
+        int hi = vRecords.size() - 1;
+        int mid = (lo + hi) / 2;
+        while (lo < hi - 1) {
+            Hashtable<String, Object> hMidRow = vRecords.get(mid);
+            if (hMidRow.get(sClusteringKey).equals(hInsertRow.get(sClusteringKey))) {
+                vRecords.add(mid, hInsertRow);
+                return;
+            } else if (((Comparable)hMidRow.get(sClusteringKey)).compareTo((Comparable)hInsertRow.get(sClusteringKey)) < 0) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+            mid = (lo + hi) / 2;
+        }
+        if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(hi).get(sClusteringKey)) > 0) vRecords.add(hi + 1, hInsertRow);
+        else if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(lo).get(sClusteringKey)) < 0) vRecords.add(lo, hInsertRow);
+        else vRecords.add(hi, hInsertRow);
     }
 
     public void updatePage(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)
