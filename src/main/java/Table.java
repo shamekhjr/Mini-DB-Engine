@@ -148,9 +148,6 @@ public class Table implements java.io.Serializable {
         //}
 
         // check if primary key already exists
-        Hashtable<String, Object> hPrimaryKey = new Hashtable<>();
-        hPrimaryKey.put(sClusteringKey, htblColNameValue.get(sClusteringKey));
-
         if (cslsClusterValues.contains(htblColNameValue.get(sClusteringKey))) { // instead of searching for the record
             throw new DBAppException("Primary key already exists");
         }
