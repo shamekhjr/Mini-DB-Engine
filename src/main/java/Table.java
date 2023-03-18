@@ -358,7 +358,8 @@ public class Table implements java.io.Serializable {
     }
 
     public void deleteTable() {
-
+        File myObj = new File(this.sTableName + ".class");
+        myObj.delete();
     }
 
     public void serializeTable() {
