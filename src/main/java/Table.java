@@ -99,19 +99,20 @@ public class Table implements java.io.Serializable {
         String[] line;
         while ((line = reader.readNext()) != null) {
             // Process each line of the CSV file
-            for (String field : line) {
+            for (String field : line) { // Mazen: Why are you traversing through the line array ?
                if (field.equals(sTableName)) {
                    // check for data type
                    if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
                        throw new DBAppException("Invalid data type for column " + line[1]);
                    }
                    // check for min and max
-                   castAndCompare(htblColNameValue.get(line[1]),line[6]);
+                   castAndCompare(htblColNameValue.get(line[1]),line[6]); // Mazen: What is the purpose of this line ?
                    if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
                            || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
                        throw new DBAppException("Value for column " + line[1] + " is out of range");
                    }
 
+                   // Mazen: Do we need to make sure that data itself is also valid, for example : 2023-13-23 ?
                    // check if date in input is in the correct format "YYYY-MM-DD"
                    if (line[2].equals("java.util.Date")) {
                        String[] date = ((String) htblColNameValue.get(line[1])).split("-");
@@ -143,7 +144,7 @@ public class Table implements java.io.Serializable {
             Serializable oMaxClusterVal = (Serializable) pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
             // update minMax vector
             vecMinMaxOfPagesForClusteringKey.add(new rangePair<>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-            hPageFullStatus.put(iNumOfPages - 1, false);
+            hPageFullStatus.put(iNumOfPages - 1, false); // Mazen: What if the page is of size one record then we should not make condition equal to false ?
             vNumberOfRowsPerPage.add(iNumOfPages - 1, 1);
             pPage1.serializePage();
         } else { // insert in some page
@@ -358,7 +359,7 @@ public class Table implements java.io.Serializable {
         Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
-        if (hCondition.keySet().contains(sClusteringKey)) { // eles go, binary search
+        if (hCondition.keySet().contains(sClusteringKey)) { // binary search
             Object oClusterValue = hCondition.get(sClusteringKey);
             // consult hanti-kanti-ultra-omega-gadaym-speedy minProMax vector to fetch da page
             for (int i = 0; i < iNumOfPages; i++) {
