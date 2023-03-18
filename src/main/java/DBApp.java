@@ -41,9 +41,14 @@ public class DBApp {
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException {
         // load table data from hard disk
-        Table tTable = Table.loadTable(strTableName);
-        tTable.insertIntoTable(htblColNameValue);
-        tTable.serializeTable();
+        try {
+            Table tTable = Table.loadTable(strTableName);
+            tTable.insertIntoTable(htblColNameValue);
+            tTable.serializeTable();
+        } catch (FileNotFoundException e) { // if table does not exist
+            throw new DBAppException("Table not found");
+        }
+
     }
 
 

@@ -452,7 +452,7 @@ public class Table implements java.io.Serializable {
         return result;
     }
 
-    public static Table loadTable (String sTableName) {
+    public static Table loadTable (String sTableName) throws FileNotFoundException {
         Table tTable = null;
         try {
             FileInputStream fis = new FileInputStream(sTableName+".class");
@@ -462,9 +462,8 @@ public class Table implements java.io.Serializable {
             fis.close();
             return tTable;
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new FileNotFoundException(sTableName);
         }
-        return tTable;
     }
 
     public static int castAndCompare(Object input, String csv) {
