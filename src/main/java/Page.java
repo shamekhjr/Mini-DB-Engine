@@ -82,7 +82,6 @@ public class Page implements Serializable {
             }
             mid = (lo + hi) / 2;
         }
-
         if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(hi).get(sClusteringKey)) > 0) vRecords.add(hi + 1, hInsertRow);
         else if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(lo).get(sClusteringKey)) < 0) vRecords.add(lo, hInsertRow);
         else vRecords.add(hi, hInsertRow);

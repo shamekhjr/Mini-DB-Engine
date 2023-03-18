@@ -1,12 +1,12 @@
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.io.*;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
-
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvValidationException;
 
 
 public class Table implements java.io.Serializable {
@@ -111,10 +111,12 @@ public class Table implements java.io.Serializable {
             }
         }
 
+        boolean found = false;
         while ((line = reader.readNext()) != null) {
             // Process each line of the CSV file
-            for (String field : line) { // Mazen: Why are you traversing through the line array ?
-               if (field.equals(sTableName)) {
+
+               if (line[0].equals(sTableName)) {
+                     found = true;
 
                    // check for data type
                    if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
@@ -122,13 +124,11 @@ public class Table implements java.io.Serializable {
                    }
 
                    // check for min and max
-                   castAndCompare(htblColNameValue.get(line[1]),line[6]); // Mazen: What is the purpose of this line ?
                    if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
                            || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
                        throw new DBAppException("Value for column " + line[1] + " is out of range");
                    }
 
-                   // Mazen: Do we need to make sure that data itself is also valid, for example : 2023-13-23 ?
                    // check if date in input is in the correct format "YYYY-MM-DD"
                    if (line[2].equals("java.util.Date")) {
                        String[] date = ((String) htblColNameValue.get(line[1])).split("-");
@@ -139,8 +139,11 @@ public class Table implements java.io.Serializable {
                            throw new DBAppException("Invalid date format for column " + line[1]);
                        }
                    }
+
+               } else if (found) {
+                   break; // no need to continue searching
                }
-            }
+
         }
 
         // check if the number of columns in the input matches the number of columns in the metadata
@@ -150,6 +153,8 @@ public class Table implements java.io.Serializable {
 
         // check if primary key already exists
         if (cslsClusterValues.contains(htblColNameValue.get(sClusteringKey))) { // instead of searching for the record
+            // trade-off between speed and memory usage; this improves speed but consumes alot of memory
+            // O(log n) but n may be huge, so is it better than searching for the record?
             throw new DBAppException("Primary key already exists");
         }
 
@@ -164,7 +169,7 @@ public class Table implements java.io.Serializable {
             Serializable oMaxClusterVal = (Serializable) pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
             // update minMax vector
             vecMinMaxOfPagesForClusteringKey.add(new rangePair<>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-            hPageFullStatus.put(iNumOfPages - 1, false); // Mazen: What if the page is of size one record then we should not make condition equal to false ?
+            hPageFullStatus.put(iNumOfPages - 1, pPage1.isFull());
             vNumberOfRowsPerPage.add(iNumOfPages - 1, 1);
             pPage1.serializePage();
         } else { // insert in some page
@@ -357,6 +362,7 @@ public class Table implements java.io.Serializable {
         // use searchRecords instead?
     }
 
+    // Note: this method is not used in the project, not required
     public void deleteTable() {
         File myObj = new File(this.sTableName + ".class");
         myObj.delete();
