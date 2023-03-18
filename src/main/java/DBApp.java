@@ -77,6 +77,7 @@ public class DBApp {
             if (line[0].equals(strTableName)) {
 
                 //load table
+                // TODO use try catch as in insertIntoTable
                 Table tTable = Table.loadTable(strTableName);
 
                 //check that column names and types are valid
