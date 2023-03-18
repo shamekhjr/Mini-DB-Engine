@@ -2,6 +2,7 @@ import java.io.*;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -14,6 +15,8 @@ public class Table implements java.io.Serializable {
     int iNumOfPages;
     int iNumOfRows;
     Hashtable<Integer, Boolean> hPageFullStatus;
+    ConcurrentSkipListSet<Object> cslsClusterValues;
+    ConcurrentSkipListSet<String> cslsColNames;
     Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey;
     Vector<Integer> vNumberOfRowsPerPage;
 
@@ -26,6 +29,8 @@ public class Table implements java.io.Serializable {
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
+        this.cslsClusterValues = new ConcurrentSkipListSet<>();
+        this.cslsColNames = new ConcurrentSkipListSet<>();
         this.vNumberOfRowsPerPage = new Vector<>();
         this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Serializable, Serializable>>();
         this.sClusteringKey = strClusteringKeyColumn;
@@ -70,6 +75,7 @@ public class Table implements java.io.Serializable {
         //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
         String[] metadata = new String[8];
         for (String col: htblColNameType.keySet()) {
+            cslsColNames.add(col);
             metadata[0] = strTableName;
             metadata[1] = col;
             metadata[2] = htblColNameType.get(col);
@@ -97,14 +103,24 @@ public class Table implements java.io.Serializable {
         // check for input data validity
         CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
         String[] line;
+
+        // check if all columns in input are valid
+        for (String col : htblColNameValue.keySet()) {
+            if (!cslsColNames.contains(col)) {
+                throw new DBAppException("Column " + col + " does not exist");
+            }
+        }
+
         while ((line = reader.readNext()) != null) {
             // Process each line of the CSV file
             for (String field : line) { // Mazen: Why are you traversing through the line array ?
                if (field.equals(sTableName)) {
+
                    // check for data type
                    if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
                        throw new DBAppException("Invalid data type for column " + line[1]);
                    }
+
                    // check for min and max
                    castAndCompare(htblColNameValue.get(line[1]),line[6]); // Mazen: What is the purpose of this line ?
                    if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
@@ -127,13 +143,17 @@ public class Table implements java.io.Serializable {
             }
         }
 
-        // check if primary key already exists
-        Hashtable<String, Object> hPrimaryKey = new Hashtable<>();
-        hPrimaryKey.put(sClusteringKey, htblColNameValue.get(sClusteringKey));
+        // check if the number of columns in the input matches the number of columns in the metadata
+        //if(htblColNameValue.size() != cslsColNames.size()) {
+        //    throw new DBAppException("Invalid number of columns");
+        //}
 
-        if (searchRecords(hPrimaryKey).size() != 0) {
+        // check if primary key already exists
+        if (cslsClusterValues.contains(htblColNameValue.get(sClusteringKey))) { // instead of searching for the record
             throw new DBAppException("Primary key already exists");
         }
+
+        cslsClusterValues.add(htblColNameValue.get(sClusteringKey)); // add to the ClusterValues list
 
         // check if this is the first insert
         if (iNumOfPages == 0) {
