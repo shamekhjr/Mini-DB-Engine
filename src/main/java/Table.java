@@ -190,10 +190,7 @@ public class Table implements java.io.Serializable {
             pInsertPage = new Page(sTableName, iInsertPageNum, true);
 
 
-            boolean bIsFull = false;
-            if (pInsertPage.isFull()) {
-                bIsFull = true;
-            }
+            boolean bIsFull = pInsertPage.isFull();
 
             // insert in page
             pInsertPage.sortedInsert(htblColNameValue, sClusteringKey);
@@ -219,6 +216,7 @@ public class Table implements java.io.Serializable {
                     hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
                     vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
                     pNewPage.serializePage();
+
                 } else {
                     // loop to shift to the next pages
                     for (int i = iInsertPageNum + 1; i < iNumOfPages; i++) {
