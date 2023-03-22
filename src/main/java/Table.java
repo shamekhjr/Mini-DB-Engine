@@ -1,12 +1,10 @@
+import java.io.*;
+import java.util.Hashtable;
+import java.util.Vector;
+
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
-
-import java.io.*;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 
 public class Table implements java.io.Serializable {
@@ -15,30 +13,22 @@ public class Table implements java.io.Serializable {
     int iNumOfPages;
     int iNumOfRows;
     Hashtable<Integer, Boolean> hPageFullStatus;
-    ConcurrentSkipListSet<Object> cslsClusterValues;
-    ConcurrentSkipListSet<String> cslsColNames;
-    Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey;
-    Vector<Integer> vNumberOfRowsPerPage;
+    Vector<rangePair<Object,Object>> vecMinMaxOfPagesForClusteringKey;
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                  Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
-
-        //initializing instance vars
         this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
-        this.cslsClusterValues = new ConcurrentSkipListSet<>();
-        this.cslsColNames = new ConcurrentSkipListSet<>();
-        this.vNumberOfRowsPerPage = new Vector<>();
-        this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Serializable, Serializable>>();
+        this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Object,Object>>();
         this.sClusteringKey = strClusteringKeyColumn;
 
         //check if the table sizes match
         if (htblColNameType.size() != htblColNameMin.size() ||
                 htblColNameType.size() != htblColNameMax.size()) {
-            throw new DBAppException("Number of Columns does not match their given properties");
+            throw new DBAppException("Table sizes do not match");
         }
 
         //making sure column data types are valid
@@ -75,7 +65,6 @@ public class Table implements java.io.Serializable {
         //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
         String[] metadata = new String[8];
         for (String col: htblColNameType.keySet()) {
-            cslsColNames.add(col);
             metadata[0] = strTableName;
             metadata[1] = col;
             metadata[2] = htblColNameType.get(col);
@@ -90,95 +79,34 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws IOException, CsvValidationException, DBAppException {
-        /* NOTES:
-            - check for input (size and datatypes), (Note: date acceptable format is "YYYY-MM-DD")
+    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) {
+        //NOTES:
+        /*
             - don't insert more than N (consult DBApp.config)
-            - always update minMax, hPageFullStatus, vNumberOfRowsPerPage, iNumOfPages, iNumOfRows
+            - always update minMax
             - save page after modification/creation
-            - save table at the end (done in DBApp.java)
-            - check if primary key is unique
+            - save table at the end
+            - fill fullStatus HashTable
         */
-
-        // check for input data validity
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-        String[] line;
-
-        // check if all columns in input are valid
-        for (String col : htblColNameValue.keySet()) {
-            if (!cslsColNames.contains(col)) {
-                throw new DBAppException("Column " + col + " does not exist");
-            }
-        }
-
-        boolean found = false;
-        while ((line = reader.readNext()) != null) {
-            // Process each line of the CSV file
-
-               if (line[0].equals(sTableName)) {
-                     found = true;
-
-                   // check for data type
-                   if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
-                       throw new DBAppException("Invalid data type for column " + line[1]);
-                   }
-
-                   // check for min and max
-                   if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
-                           || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
-                       throw new DBAppException("Value for column " + line[1] + " is out of range");
-                   }
-
-                   // check if date in input is in the correct format "YYYY-MM-DD"
-                   if (line[2].equals("java.util.Date")) {
-                       String[] date = ((String) htblColNameValue.get(line[1])).split("-");
-                       if (date.length != 3) {
-                           throw new DBAppException("Invalid date format for column " + line[1]);
-                       }
-                       if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
-                           throw new DBAppException("Invalid date format for column " + line[1]);
-                       }
-                   }
-
-               } else if (found) {
-                   break; // no need to continue searching
-               }
-
-        }
-
-        // check if the number of columns in the input matches the number of columns in the metadata
-        //if(htblColNameValue.size() != cslsColNames.size()) {
-        //    throw new DBAppException("Invalid number of columns");
-        //}
-
-        // check if primary key already exists
-        if (cslsClusterValues.contains(htblColNameValue.get(sClusteringKey))) { // instead of searching for the record
-            // trade-off between speed and memory usage; this improves speed but consumes alot of memory
-            // O(log n) but n may be huge, so is it better than searching for the record?
-            throw new DBAppException("Primary key already exists");
-        }
-
-        cslsClusterValues.add(htblColNameValue.get(sClusteringKey)); // add to the ClusterValues list
-
         // check if this is the first insert
         if (iNumOfPages == 0) {
             iNumOfPages++;
             Page pPage1 = new Page(sTableName, iNumOfPages - 1, false);
             pPage1.vRecords.add(htblColNameValue);
-            Serializable oMinClusterVal = (Serializable) pPage1.vRecords.get(0).get(sClusteringKey);
-            Serializable oMaxClusterVal = (Serializable) pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
+            Object oMinClusterVal = pPage1.vRecords.get(0).get(sClusteringKey);
+            Object oMaxClusterVal = pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
             // update minMax vector
-            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-            hPageFullStatus.put(iNumOfPages - 1, pPage1.isFull());
-            vNumberOfRowsPerPage.add(iNumOfPages - 1, 1);
+            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
+            hPageFullStatus.put(iNumOfPages-1, false);
             pPage1.serializePage();
         } else { // insert in some page
             Object oClusterValue = htblColNameValue.get(sClusteringKey);
-            int iInsertPageNum = 0; // case that the input is the smallest value
+            int iInsertPageNum = 0;
             Page pInsertPage = null;
             // consult minMax to fetch da page
             for (int i = 0; i < iNumOfPages; i++) {
-                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0) {
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
+                        && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
                     iInsertPageNum = i;
                 }
 
@@ -186,161 +114,13 @@ public class Table implements java.io.Serializable {
                     break;
                 }
             }
+            //pInsertPage = new Page()
 
-            pInsertPage = new Page(sTableName, iInsertPageNum, true);
-
-
-            boolean bIsFull = pInsertPage.isFull();
-
-            // insert in page
-            pInsertPage.sortedInsert(htblColNameValue, sClusteringKey);
-
-
-            // check if page is full
-            if (bIsFull) {
-                // get the last row in the page and delete it
-                Hashtable<String, Object> htblLastRow = pInsertPage.vRecords.get(pInsertPage.size()-1);
-                pInsertPage.vRecords.remove(pInsertPage.size()-1);
-
-                // check if last page
-                if (iInsertPageNum == iNumOfPages - 1) {
-                    // insert in new page
-                    iNumOfPages++;
-                    Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
-                    pNewPage.vRecords.add(htblLastRow);
-
-                    // update minMax vector
-                    Serializable oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
-                    Serializable oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size()-1).get(sClusteringKey);
-                    vecMinMaxOfPagesForClusteringKey.add(new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-                    hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
-                    vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
-                    pNewPage.serializePage();
-
-                } else {
-                    // loop to shift to the next pages
-                    for (int i = iInsertPageNum + 1; i < iNumOfPages; i++) {
-                        Page pPage = new Page(sTableName, i, true);
-                        if (pPage.isFull()) {
-                            // add to page and shift the extra row in this page to the next page if exists
-                            pPage.sortedInsert(htblLastRow, sClusteringKey);
-
-                            // get the last row in the page and delete it
-                            htblLastRow = pPage.vRecords.get(pPage.size()-1);
-                            pPage.vRecords.remove(pPage.size()-1);
-
-                            // update minMax vector
-                            Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
-                            Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pPage.size()-1).get(sClusteringKey);
-                            vecMinMaxOfPagesForClusteringKey.set(i, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-                            hPageFullStatus.put(i, pPage.isFull());
-                            vNumberOfRowsPerPage.set(i, pPage.size());
-                            pPage.serializePage();
-
-                            // check if last page
-                            if (pPage.index == iNumOfPages - 1) {
-                                // insert in new page
-                                iNumOfPages++;
-                                Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
-                                pNewPage.vRecords.add(htblLastRow);
-
-                                // update minMax vector
-                                oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
-                                oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size() - 1).get(sClusteringKey);
-                                vecMinMaxOfPagesForClusteringKey.add(new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-                                hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
-                                vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
-                                pNewPage.serializePage();
-                                break;
-                            }
-                        } else { // page is not full
-                            // add to page and break
-                            pPage.sortedInsert(htblLastRow, sClusteringKey);
-
-                            // update minMax vector of insertPage
-                            Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
-                            Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
-                            vecMinMaxOfPagesForClusteringKey.set(pPage.index, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-
-                            // update page full status
-                            hPageFullStatus.put(pPage.index, pPage.isFull());
-
-                            // update number of rows in page
-                            vNumberOfRowsPerPage.set(pPage.index, pPage.size());
-                            pPage.serializePage();
-                            break;
-                        }
-                    }
-                }
-            }
-            // update minMax vector of insertPage
-            Serializable oMinClusterVal = (Serializable) pInsertPage.vRecords.get(0).get(sClusteringKey);
-            Serializable oMaxClusterVal = (Serializable) pInsertPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
-            vecMinMaxOfPagesForClusteringKey.set(iInsertPageNum, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
-
-            // update page full status
-            hPageFullStatus.put(iInsertPageNum, pInsertPage.isFull());
-
-            // update number of rows in page
-            vNumberOfRowsPerPage.set(iInsertPageNum, pInsertPage.size());
-            pInsertPage.serializePage();
         }
-        iNumOfRows++;
     }
 
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) {
+    public void deleteFromTable() {
 
-        //TODO
-        //1- search for all relevant records based on conditions (DONE)
-        //2- remove the records in descending order (akher index fe akher page le awel index fe awel page) (DONE)
-        //3- update minMax
-        //4- inter-vector shiftation
-        //5- re-serialize and save pages
-
-        //search for all relevant data given the conditions
-        //first integer is pageNumber
-        //second integer is recordIndex
-        Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> vRelevantRecords = searchRecords(htblColNameValue);
-
-        //init hashtable of pages to keep stuff in memory
-        Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
-
-        //remove the records in descending order
-        for (int i = vRelevantRecords.size() - 1; i >= 0; i--) {
-
-            //find pageNumber and recordIndexInPage
-            int iPageToLoad = vRelevantRecords.get(i).val1.val1;
-            int iRecordIndexInPage = vRelevantRecords.get(i).val1.val2;
-
-            //load the page
-            Page pPageToLoad = new Page(strTableName, iPageToLoad, true);
-            htblPagesTemp.put(iPageToLoad, pPageToLoad);
-
-            //remove the record
-            pPageToLoad.vRecords.remove(iRecordIndexInPage);
-
-            //decrement number of rows in the page
-            this.vNumberOfRowsPerPage.set(iPageToLoad, vNumberOfRowsPerPage.get(iPageToLoad) - 1);
-
-            //update hPageFullStatus
-            hPageFullStatus.put(iPageToLoad, false);
-        }
-
-        //inter-vector shiftation
-        for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
-
-            //check if page is not full
-            //if it is not full, i know i should get values from next non-empty pages and insert
-            if(!hPageFullStatus.get(k)) {
-                for (int j = k + 1; j < this.iNumOfPages; j++) {
-
-                    if (vNumberOfRowsPerPage.get(j) > 0) {
-                        //we need to remove records from this page and put them in page k
-                    }
-                }
-            }
-
-        }
     }
 
     public void updateTable() {
@@ -354,16 +134,15 @@ public class Table implements java.io.Serializable {
                 call search then update
             goodluck future implementer :)
         */
+
     }
 
     public void searchInTable() {
-        // use searchRecords instead?
+
     }
 
-    // Note: this method is not used in the project, not required
     public void deleteTable() {
-        File myObj = new File(this.sTableName + ".class");
-        myObj.delete();
+
     }
 
     public void serializeTable() {
@@ -378,13 +157,13 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    // chad search; serves selectFromTable, deleteFromTable (supplies the records and their locations: page, index)
-    public Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
-        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> result = new Vector<>();
+    // chad search; serves selectFromTable, deleteFromTable
+    public Vector<Pair<Integer,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
+        Vector<Pair<Integer,Hashtable<String, Object>>> result = new Vector<>();
         Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
-        if (hCondition.keySet().contains(sClusteringKey)) { // binary search
+        if (hCondition.keySet().contains(sClusteringKey)) { // eles go, binary search
             Object oClusterValue = hCondition.get(sClusteringKey);
             // consult hanti-kanti-ultra-omega-gadaym-speedy minProMax vector to fetch da page
             for (int i = 0; i < iNumOfPages; i++) {
@@ -401,18 +180,7 @@ public class Table implements java.io.Serializable {
                         } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {
                             hi = mid - 1;
                         } else {
-                            // check other conditions
-                            Hashtable<String, Object> hCurrRecord = pCurrentPage.vRecords.get(mid);
-                            boolean bAllSatisfied = true;
-                            for (String col : hCondition.keySet()) {
-                                if (!hCondition.get(col).equals(hCurrRecord.get(col))) {
-                                    bAllSatisfied = false;
-                                    break;
-                                }
-                            }
-
-                            if (bAllSatisfied)
-                                result.add(new Pair<>((new Pair<>(i, mid)), hCurrRecord));
+                            result.add(new Pair<>(mid, vRecords.get(mid)));
                             break;
                         }
                     }
@@ -439,8 +207,7 @@ public class Table implements java.io.Serializable {
                         }
                     }
 
-                    if (bAllSatisfied)
-                        result.add(new Pair<>((new Pair<>(i, index)), ht));
+                    if (bAllSatisfied) result.add(new Pair<>(index, ht));
 
                     index++;
                 }
@@ -450,7 +217,7 @@ public class Table implements java.io.Serializable {
         return result;
     }
 
-    public static Table loadTable (String sTableName) throws FileNotFoundException {
+    public static Table loadTable (String sTableName) {
         Table tTable = null;
         try {
             FileInputStream fis = new FileInputStream(sTableName+".class");
@@ -458,33 +225,10 @@ public class Table implements java.io.Serializable {
             tTable = (Table) ois.readObject();
             ois.close();
             fis.close();
-            return tTable;
+            return (Table) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            throw new FileNotFoundException(sTableName);
+            e.printStackTrace();
         }
+        return tTable;
     }
-
-    public static int castAndCompare(Object input, String csv) {
-        Class<?> clazz = input.getClass();
-        int result = 0;
-        if (clazz == Double.class) {
-            Double d = Double.parseDouble(csv);
-            result = ((Double) input).compareTo(d);
-        } else if (clazz == Integer.class) {
-            Integer d = Integer.parseInt(csv);
-            result = ((Integer) input).compareTo(d);
-        } else if (clazz == Date.class) {
-            long d = Date.parse(csv);
-            long input_date = ((Date) input).getTime();
-            result = Long.compare(input_date, d);
-        } else if (clazz == String.class) {
-            String input_string = (String) input;
-            result = input_string.length()-csv.length();
-        }
-        return result;
-
-    }
-
-
-
 }

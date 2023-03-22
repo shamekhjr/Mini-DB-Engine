@@ -1,5 +1,3 @@
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.*;
@@ -27,7 +25,6 @@ public class DBApp {
                             Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
                             Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException, CsvValidationException {
 
-        //create instance of Table class
         Table table = new Table(strTableName, strClusteringKeyColumn,
                 htblColNameType, htblColNameMin,
                 htblColNameMax);
@@ -39,16 +36,10 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException {
+    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
         // load table data from hard disk
-        try {
-            Table tTable = Table.loadTable(strTableName);
-            tTable.insertIntoTable(htblColNameValue);
-            tTable.serializeTable();
-        } catch (FileNotFoundException e) { // if table does not exist
-            throw new DBAppException("Table not found");
-        }
-
+        Table tTable = Table.loadTable(strTableName);
+        tTable.insertIntoTable(htblColNameValue);
     }
 
 
@@ -66,53 +57,7 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException, CsvException {
-
-        //declaring csv reader
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-
-        //check if table exists
-        String[] line;
-        while ((line = reader.readNext()) != null) {
-            if (line[0].equals(strTableName)) {
-
-                //load table
-                // TODO use try catch as in insertIntoTable
-                Table tTable = Table.loadTable(strTableName);
-
-                //check that column names and types are valid
-                for (String key : htblColNameValue.keySet()) {
-
-                    //look in metadata file for column name
-                    boolean found = false;
-                    for (String[] line2 : reader.readAll()) {
-                        //reminder:
-                        //line2[0] = table name
-                        //line2[1] = column name
-                        //line2[2] = column type
-
-                        if (line2[0].equals(strTableName) && line2[1].equals(key)) {
-                            found = true;
-
-                            //check that column type is valid
-                            //since the column exists in metadata file we are sure the column type should
-                            //be one of the following: java.lang.Integer, java.lang.String,
-                            // java.lang.Double
-                            if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
-                                throw new DBAppException("Invalid column type for deletion");
-                            }
-                            break;
-                        }
-                        throw new DBAppException("Invalid column name for deletion");
-                    }
-                }
-
-                //delete from table
-                tTable.deleteFromTable(strTableName, htblColNameValue);
-                return;
-            }
-        }
-        throw new DBAppException("Table does not exist");
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
 
     }
 
@@ -150,58 +95,35 @@ public class DBApp {
 
         dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
 
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 1);
-            put("name", "Ahmed");
-            put("gpa", 0.9);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 2);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 3);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 5);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 4);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 6);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 0);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 12);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 12);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
+//        try {
+//            FileOutputStream fileOut =
+//                    new FileOutputStream("trial.class");
+//            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+//            out.writeObject("Hello World");
+//            out.close();
+//            fileOut.close();
+//            System.out.println("serialized in trial.class");
+//        } catch (IOException i) {
+//            i.printStackTrace();
+//        }
+//
+//        String help = "";
+//
+//        try {
+//            FileInputStream fileIn = new FileInputStream("trial.class");
+//            ObjectInputStream in = new ObjectInputStream(fileIn);
+//            help = (String) in.readObject();
+//            in.close();
+//            fileIn.close();
+//        } catch (IOException i) {
+//            i.printStackTrace();
+//            return;
+//        } catch (ClassNotFoundException c) {
+//            System.out.println("Data not found");
+//            c.printStackTrace();
+//            return;
+//        }
+//
+//        System.out.println("Deserialized: " + help);
     }
 }

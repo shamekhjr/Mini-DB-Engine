@@ -1,11 +1,13 @@
-import java.io.Serializable;
-import java.util.Date;
+public class rangePair<Mn, Mx> {
+    public Mn min;
+    public Mx max;
 
-public class rangePair<M extends Serializable, N extends Serializable> implements Serializable {
-    public M min;
-    public N max;
+    public rangePair(Mn min, Mx max) {
+        this.min = min;
+        this.max = max;
+    }
 
-    public rangePair(M min, N max) {
+    public void updateMinMax(Mn min, Mx Max) {
         this.min = min;
         this.max = max;
     }
