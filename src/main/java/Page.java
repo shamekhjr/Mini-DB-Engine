@@ -3,7 +3,7 @@ import java.util.*;
 import java.util.Hashtable;
 
 public class Page implements Serializable {
-    public Vector <Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
+    public Vector<Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
     public String sTableName;
     public String sClusteringKey;
     public int index;
@@ -39,7 +39,7 @@ public class Page implements Serializable {
 
     public boolean isFull ()
     {
-        String _filename = "DBApp.config"; // File that contain configuration
+        String _filename = "src/main/resources/DBApp.config"; // File that contain configuration
         Properties configProperties = new Properties();
 
         try (FileInputStream fis = new FileInputStream(_filename))
@@ -54,7 +54,7 @@ public class Page implements Serializable {
             e.printStackTrace();
         }
 
-        int n = Integer.parseInt(configProperties.getProperty("DBApp.MaximumRowsCountinTablePage"));
+        int n = Integer.parseInt(configProperties.getProperty("MaximumRowsCountinTablePage"));
 
         return (n == vRecords.size());
     }
@@ -62,6 +62,29 @@ public class Page implements Serializable {
     public boolean isEmpty ()
     {
         return vRecords.isEmpty();
+    }
+
+    public void sortedInsert(Hashtable<String,Object> hInsertRow, String sClusteringKey) {
+        // binary search the position to insert into
+        int lo = 0;
+        int hi = vRecords.size() - 1;
+        //System.out.println(hi);
+        int mid = (lo + hi) / 2;
+        while (lo < hi - 1) {
+            Hashtable<String, Object> hMidRow = vRecords.get(mid);
+            if (hMidRow.get(sClusteringKey).equals(hInsertRow.get(sClusteringKey))) {
+                vRecords.add(mid, hInsertRow);
+                return;
+            } else if (((Comparable)hMidRow.get(sClusteringKey)).compareTo((Comparable)hInsertRow.get(sClusteringKey)) < 0) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+            mid = (lo + hi) / 2;
+        }
+        if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(hi).get(sClusteringKey)) > 0) vRecords.add(hi + 1, hInsertRow);
+        else if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(lo).get(sClusteringKey)) < 0) vRecords.add(lo, hInsertRow);
+        else vRecords.add(hi, hInsertRow);
     }
 
     public void updatePage(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)
@@ -76,18 +99,23 @@ public class Page implements Serializable {
     public void deleteRecord(Hashtable<String, Object> htblColNameValue)
     {
         //this.deserializePage();
-        Vector<Hashtable<String, Object>> tempvRecords = this.searchPage(htblColNameValue);
+        // [Old] Vector<Hashtable<String, Object>> tempvRecords = this.searchPage(htblColNameValue);
+        Vector<Integer> tempvRecords = this.searchPage(htblColNameValue);
         int sizeOfPage = tempvRecords.size();
 
         for (int i = 0; i < sizeOfPage; i++) {
-            Hashtable<String, Object> temphtblColNameValue = tempvRecords.get(i);
-            vRecords.removeElement(temphtblColNameValue); // Problem: O(N) ?
+            // [Old]
+            /*Hashtable<String, Object> temphtblColNameValue = tempvRecords.get(i);
+            vRecords.removeElement(temphtblColNameValue);*/
+            int recIndex = tempvRecords.get(i);
+            vRecords.remove(recIndex);
         }
     }
 
-    public Vector<Hashtable<String, Object>> searchPage(Hashtable<String, Object> hCondition) {
+    public Vector<Integer> searchPage(Hashtable<String, Object> hCondition) {
         //this.deserializePage();
 
+        Vector<Integer> retVRecords = new Vector<>();
         Vector<Hashtable<String, Object>> rvRecords = new Vector<>(); // the result of search could be a list of records
         int sizeOfPage = vRecords.size();
 
@@ -111,25 +139,28 @@ public class Page implements Serializable {
             {
                 Hashtable<String, Object> rhtblColNameValue = vRecords.get(mid);
                 rvRecords.add(rhtblColNameValue);
+                retVRecords.add(mid);
             }
         }
         else { // If the search is not based on the clustering key then their could be multiple records as output due to duplicate values in column
             for (int i = 0; i < sizeOfPage; i++) {
                 Hashtable<String, Object> temphtblColNameValue = vRecords.get(i);
-                Set<String> tempSet = temphtblColNameValue.keySet();
+
                 boolean bAllSatisfied = true;
-                for (String key : tempSet) {
+                for (String key : temphtblColNameValue.keySet()) { // Problem: Set are not thread safe :(
                     if (!(temphtblColNameValue.get(key).equals(hCondition.get(key)))) {
                         bAllSatisfied = false;
                     }
                 }
                 if (bAllSatisfied) {
                     rvRecords.add(temphtblColNameValue);
+                    retVRecords.add(i);
                 }
             }
         }
         this.serializePage();
-        return rvRecords; // Return of the result of search is a Vector of HashTable (References to the Object)
+        // [Old] return rvRecords; Return of the result of search is a Vector of HashTable (References to the Object)
+        return retVRecords; // Return vector of index so that we can access the records
     }
     public void serializePage () {
         try {
@@ -145,7 +176,7 @@ public class Page implements Serializable {
         }
     }
 
-    // depreciated
+    // deprecated
     public void deserializePage() {
         try {
             FileInputStream fis = new FileInputStream(this.sTableName+"_page"+ index + ".class");
@@ -161,4 +192,12 @@ public class Page implements Serializable {
             e.printStackTrace();
         }
     }
+
+    // delete page
+    public void deletePage() {
+        File myObj = new File(this.sTableName+"_page"+ index + ".class");
+        myObj.delete();
+    }
 }
+
+
