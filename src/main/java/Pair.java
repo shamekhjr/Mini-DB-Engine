@@ -1,4 +1,4 @@
-public class Pair<V1, V2> implements java.io.Serializable {
+public class Pair<V1, V2> {
     public V1 val1;
     public V2 val2;
 
