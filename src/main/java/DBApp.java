@@ -45,8 +45,8 @@ public class DBApp {
             Table tTable = Table.loadTable(strTableName);
             tTable.insertIntoTable(htblColNameValue);
             tTable.serializeTable();
-        } catch (FileNotFoundException e) { // if table does not exist
-            throw new DBAppException("Table not found");
+        } catch (Exception e) { // if table does not exist
+            throw new DBAppException(e.getMessage());
         }
 
     }

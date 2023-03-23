@@ -1,5 +1,4 @@
 import java.io.Serializable;
-import java.util.Date;
 
 public class rangePair<M extends Serializable, N extends Serializable> implements Serializable {
     public M min;

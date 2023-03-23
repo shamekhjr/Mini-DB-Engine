@@ -165,7 +165,7 @@ public class Table implements java.io.Serializable {
             Serializable oMinClusterVal = (Serializable) pPage1.vRecords.get(0).get(sClusteringKey);
             Serializable oMaxClusterVal = (Serializable) pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
             // update minMax vector
-            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
             hPageFullStatus.put(iNumOfPages - 1, pPage1.isFull());
             vNumberOfRowsPerPage.add(iNumOfPages - 1, 1);
             pPage1.serializePage();
@@ -209,7 +209,7 @@ public class Table implements java.io.Serializable {
                     // update minMax vector
                     Serializable oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
                     Serializable oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size()-1).get(sClusteringKey);
-                    vecMinMaxOfPagesForClusteringKey.add(new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                    vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
                     hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
                     vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
                     pNewPage.serializePage();
@@ -229,7 +229,7 @@ public class Table implements java.io.Serializable {
                             // update minMax vector
                             Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
                             Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pPage.size()-1).get(sClusteringKey);
-                            vecMinMaxOfPagesForClusteringKey.set(i, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                            vecMinMaxOfPagesForClusteringKey.set(i, new rangePair<>(oMinClusterVal, oMaxClusterVal));
                             hPageFullStatus.put(i, pPage.isFull());
                             vNumberOfRowsPerPage.set(i, pPage.size());
                             pPage.serializePage();
@@ -244,7 +244,7 @@ public class Table implements java.io.Serializable {
                                 // update minMax vector
                                 oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
                                 oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size() - 1).get(sClusteringKey);
-                                vecMinMaxOfPagesForClusteringKey.add(new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                                vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
                                 hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
                                 vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
                                 pNewPage.serializePage();
@@ -257,7 +257,7 @@ public class Table implements java.io.Serializable {
                             // update minMax vector of insertPage
                             Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
                             Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
-                            vecMinMaxOfPagesForClusteringKey.set(pPage.index, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+                            vecMinMaxOfPagesForClusteringKey.set(pPage.index, new rangePair<>(oMinClusterVal, oMaxClusterVal));
 
                             // update page full status
                             hPageFullStatus.put(pPage.index, pPage.isFull());
@@ -273,7 +273,7 @@ public class Table implements java.io.Serializable {
             // update minMax vector of insertPage
             Serializable oMinClusterVal = (Serializable) pInsertPage.vRecords.get(0).get(sClusteringKey);
             Serializable oMaxClusterVal = (Serializable) pInsertPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
-            vecMinMaxOfPagesForClusteringKey.set(iInsertPageNum, new rangePair<Serializable, Serializable>((Serializable)oMinClusterVal, (Serializable)oMaxClusterVal));
+            vecMinMaxOfPagesForClusteringKey.set(iInsertPageNum, new rangePair<>(oMinClusterVal, oMaxClusterVal));
 
             // update page full status
             hPageFullStatus.put(iInsertPageNum, pInsertPage.isFull());
@@ -450,7 +450,7 @@ public class Table implements java.io.Serializable {
         return result;
     }
 
-    public static Table loadTable (String sTableName) throws FileNotFoundException {
+    public static Table loadTable (String sTableName) throws  FileNotFoundException {
         Table tTable = null;
         try {
             FileInputStream fis = new FileInputStream(sTableName+".class");
@@ -460,7 +460,7 @@ public class Table implements java.io.Serializable {
             fis.close();
             return tTable;
         } catch (IOException | ClassNotFoundException e) {
-            throw new FileNotFoundException(sTableName);
+            throw new FileNotFoundException(e.getMessage() + " Table: " + sTableName);
         }
     }
 
