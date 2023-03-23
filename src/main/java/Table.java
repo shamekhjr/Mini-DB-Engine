@@ -326,7 +326,7 @@ public class Table implements java.io.Serializable {
             hPageFullStatus.put(iPageToLoad, false);
         }
 
-        //inter-vector shiftation
+        //inter-vector shiftation (not needed anymore)
         for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
 
             //check if page is not full

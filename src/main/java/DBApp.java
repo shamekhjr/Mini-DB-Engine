@@ -59,6 +59,24 @@ public class DBApp {
     public void updateTable(String strTableName, String strClusteringKeyValue,
                             Hashtable<String,Object> htblColNameValue ) throws DBAppException {
 
+        //call isValidForDeletion in try/catch block
+        try {
+            if (isValidForDeletion(strTableName, htblColNameValue)) {
+                //load table
+                Table tTable = Table.loadTable(strTableName);
+
+                //delete from table
+                tTable.deleteFromTable(strTableName, htblColNameValue);
+
+                //serialize table
+                tTable.serializeTable();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (CsvException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 
@@ -68,51 +86,7 @@ public class DBApp {
     // htblColNameValue enteries are ANDED together
     public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException, CsvException {
 
-        //declaring csv reader
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
 
-        //check if table exists
-        String[] line;
-        while ((line = reader.readNext()) != null) {
-            if (line[0].equals(strTableName)) {
-
-                //load table
-                // TODO use try catch as in insertIntoTable
-                Table tTable = Table.loadTable(strTableName);
-
-                //check that column names and types are valid
-                for (String key : htblColNameValue.keySet()) {
-
-                    //look in metadata file for column name
-                    boolean found = false;
-                    for (String[] line2 : reader.readAll()) {
-                        //reminder:
-                        //line2[0] = table name
-                        //line2[1] = column name
-                        //line2[2] = column type
-
-                        if (line2[0].equals(strTableName) && line2[1].equals(key)) {
-                            found = true;
-
-                            //check that column type is valid
-                            //since the column exists in metadata file we are sure the column type should
-                            //be one of the following: java.lang.Integer, java.lang.String,
-                            // java.lang.Double
-                            if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
-                                throw new DBAppException("Invalid column type for deletion");
-                            }
-                            break;
-                        }
-                        throw new DBAppException("Invalid column name for deletion");
-                    }
-                }
-
-                //delete from table
-                tTable.deleteFromTable(strTableName, htblColNameValue);
-                return;
-            }
-        }
-        throw new DBAppException("Table does not exist");
 
     }
 
@@ -203,5 +177,51 @@ public class DBApp {
             put("gpa", 0.34);
         }});
 
+    }
+
+    public static boolean isValidForDeletion(String strTableName, Hashtable<String,Object> htblColNameValue) throws IOException, CsvException, DBAppException {
+        //declaring csv reader
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+
+        //check if table exists
+        String[] line;
+        while ((line = reader.readNext()) != null) {
+            if (line[0].equals(strTableName)) {
+
+                //load table
+                // TODO use try catch as in insertIntoTable
+                Table tTable = Table.loadTable(strTableName);
+
+                //check that column names and types are valid
+                for (String key : htblColNameValue.keySet()) {
+
+                    //look in metadata file for column name
+                    boolean found = false;
+                    for (String[] line2 : reader.readAll()) {
+                        //reminder:
+                        //line2[0] = table name
+                        //line2[1] = column name
+                        //line2[2] = column type
+
+                        if (line2[0].equals(strTableName) && line2[1].equals(key)) {
+                            found = true;
+
+                            //check that column type is valid
+                            //since the column exists in metadata file we are sure the column type should
+                            //be one of the following: java.lang.Integer, java.lang.String, java.lang.Double
+                            if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
+                                throw new DBAppException("Invalid column type for deletion");
+                            }
+                            break;
+                        }
+                        throw new DBAppException("Invalid column name for deletion");
+                    }
+                }
+
+                //can delete from table
+                return true;
+            }
+        }
+        throw new DBAppException("Table does not exist");
     }
 }
