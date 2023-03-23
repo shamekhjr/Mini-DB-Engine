@@ -59,6 +59,17 @@ public class DBApp {
     public void updateTable(String strTableName, String strClusteringKeyValue,
                             Hashtable<String,Object> htblColNameValue ) throws DBAppException {
 
+
+
+    }
+
+
+    // following method could be used to delete one or more rows.
+    // htblColNameValue holds the key and value. This will be used in search
+    // to identify which rows/tuples to delete.
+    // htblColNameValue enteries are ANDED together
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException, CsvException {
+
         //call isValidForDeletion in try/catch block
         try {
             if (isValidForDeletion(strTableName, htblColNameValue)) {
@@ -76,15 +87,6 @@ public class DBApp {
         } catch (CsvException e) {
             throw new RuntimeException(e);
         }
-
-    }
-
-
-    // following method could be used to delete one or more rows.
-    // htblColNameValue holds the key and value. This will be used in search
-    // to identify which rows/tuples to delete.
-    // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException, CsvException {
 
 
 
@@ -187,10 +189,6 @@ public class DBApp {
         String[] line;
         while ((line = reader.readNext()) != null) {
             if (line[0].equals(strTableName)) {
-
-                //load table
-                // TODO use try catch as in insertIntoTable
-                Table tTable = Table.loadTable(strTableName);
 
                 //check that column names and types are valid
                 for (String key : htblColNameValue.keySet()) {
