@@ -222,4 +222,18 @@ public class DBApp {
         }
         throw new DBAppException("Table does not exist");
     }
+
+    public static boolean isExistingTable(String strTableName) throws IOException, CsvValidationException {
+        //declaring csv reader
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+
+        //check if table exists
+        String[] line;
+        while ((line = reader.readNext()) != null) {
+            if (line[0].equals(strTableName)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

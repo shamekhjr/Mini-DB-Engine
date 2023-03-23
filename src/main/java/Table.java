@@ -35,6 +35,12 @@ public class Table implements java.io.Serializable {
         this.vecMinMaxOfPagesForClusteringKey = new Vector<rangePair<Serializable, Serializable>>();
         this.sClusteringKey = strClusteringKeyColumn;
 
+        //check if table name already exists
+        if (DBApp.isExistingTable(strTableName)) {
+            throw new DBAppException("Table " + strTableName + " already exists");
+        }
+
+
         //check if the table sizes match
         if (htblColNameType.size() != htblColNameMin.size() ||
                 htblColNameType.size() != htblColNameMax.size()) {
@@ -53,16 +59,7 @@ public class Table implements java.io.Serializable {
             }
         }
 
-        //declaring csv reader
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
 
-        //check if table name already exists
-        String[] line;
-        while ((line = reader.readNext()) != null) {
-            if (line[0].equals(strTableName)) {
-                throw new DBAppException("A table with this name already exists");
-            }
-        }
 
         //declaring the metadata file and setting it to append mode
         CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/metadata.csv", true));
@@ -294,8 +291,8 @@ public class Table implements java.io.Serializable {
         //1- search for all relevant records based on conditions (DONE)
         //2- remove the records in descending order (akher index fe akher page le awel index fe awel page) (DONE)
         //3- update minMax
-        //4- inter-vector shiftation
-        //5- re-serialize and save pages
+        //4- inter-vector shiftation (not needed anymore)
+        //5- re-serialize and save pages (do in dbapp.java)
 
         //search for all relevant data given the conditions
         //first integer is pageNumber
@@ -325,6 +322,9 @@ public class Table implements java.io.Serializable {
             //update hPageFullStatus
             hPageFullStatus.put(iPageToLoad, false);
         }
+
+        //need to handle deleting page if empty
+        //need to handle deleting table if empty
 
         //inter-vector shiftation (not needed anymore)
         for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
