@@ -45,7 +45,7 @@ public class DBApp {
             Table tTable = Table.loadTable(strTableName);
             tTable.insertIntoTable(htblColNameValue);
             tTable.serializeTable();
-        } catch (Exception e) { // if table does not exist
+        } catch (Exception e) { // if table does not exist or some error happened
             throw new DBAppException(e.getMessage());
         }
 
@@ -86,8 +86,9 @@ public class DBApp {
             throw new RuntimeException(e);
         } catch (CsvException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
 
 
     }

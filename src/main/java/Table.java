@@ -450,7 +450,7 @@ public class Table implements java.io.Serializable {
         return result;
     }
 
-    public static Table loadTable (String sTableName) throws  FileNotFoundException {
+    public static Table loadTable (String sTableName) throws  Exception {
         Table tTable = null;
         try {
             FileInputStream fis = new FileInputStream(sTableName+".class");
@@ -460,7 +460,7 @@ public class Table implements java.io.Serializable {
             fis.close();
             return tTable;
         } catch (IOException | ClassNotFoundException e) {
-            throw new FileNotFoundException(e.getMessage() + " Table: " + sTableName);
+            throw new Exception(e.getMessage() + " Table: " + sTableName);
         }
     }
 
