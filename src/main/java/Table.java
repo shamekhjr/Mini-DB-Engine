@@ -387,36 +387,37 @@ public class Table implements java.io.Serializable {
         if (hCondition.keySet().contains(sClusteringKey)) { // binary search
             Object oClusterValue = hCondition.get(sClusteringKey);
             // consult hanti-kanti-ultra-omega-gadaym-speedy minProMax vector to fetch da page
+            int iPageNum = 0;
             for (int i = 0; i < iNumOfPages; i++) {
-                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
-                && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
-                    // binary search (only one row has this primary cluster key)
-                    Page pCurrentPage = new Page(sTableName, i, true);
-                    int lo = 0;
-                    int hi = pCurrentPage.size() - 1;
-                    while (lo <= hi) {
-                        int mid = (lo + hi) / 2;
-                        if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) < 0) {
-                            lo = mid + 1;
-                        } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {
-                            hi = mid - 1;
-                        } else {
-                            // check other conditions
-                            Hashtable<String, Object> hCurrRecord = pCurrentPage.vRecords.get(mid);
-                            boolean bAllSatisfied = true;
-                            for (String col : hCondition.keySet()) {
-                                if (!hCondition.get(col).equals(hCurrRecord.get(col))) {
-                                    bAllSatisfied = false;
-                                    break;
-                                }
-                            }
-
-                            if (bAllSatisfied)
-                                result.add(new Pair<>((new Pair<>(i, mid)), hCurrRecord));
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0) {
+                    // keep finding the page until the min is greater than the cluster value
+                    iPageNum = i;
+                } else break;
+            }
+            Page pCurrentPage = new Page(sTableName, iPageNum, true);
+            // binary search (only one row has this primary cluster key)
+            int lo = 0;
+            int hi = pCurrentPage.size() - 1;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) < 0) {
+                    lo = mid + 1;
+                } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {
+                    hi = mid - 1;
+                } else {
+                    // check other conditions
+                    Hashtable<String, Object> hCurrRecord = pCurrentPage.vRecords.get(mid);
+                    boolean bAllSatisfied = true;
+                    for (String col : hCondition.keySet()) {
+                        if (!hCondition.get(col).equals(hCurrRecord.get(col))) {
+                            bAllSatisfied = false;
                             break;
                         }
                     }
-                    break; // cuz only one page has this primary cluster key
+
+                    if (bAllSatisfied)
+                        result.add(new Pair<>((new Pair<>(iPageNum, mid)), hCurrRecord));
+                    break;
                 }
             }
 
