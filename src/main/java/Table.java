@@ -466,4 +466,15 @@ public class Table implements java.io.Serializable {
         }
         return true;
     }
+
+    public void showPage(int iPageNum) throws IOException, CsvValidationException {
+        Page p = new Page(sTableName, iPageNum, true);
+        System.out.println("Page " + iPageNum + " has " + p.size() + " records ======");
+        int i = 1;
+        for (Hashtable<String, Object> ht : p.vRecords) {
+            System.out.println("" + i + "- " + ht);
+            i++;
+        }
+        System.out.println("====================================");
+    }
 }
