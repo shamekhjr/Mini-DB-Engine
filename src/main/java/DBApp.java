@@ -213,6 +213,9 @@ public class DBApp {
                             }
                             break;
                         }
+                    }
+
+                    if (!found) {
                         throw new DBAppException("Invalid column name for deletion");
                     }
                 }
