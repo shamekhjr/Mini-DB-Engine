@@ -98,50 +98,7 @@ public class Table implements java.io.Serializable {
         */
 
         // check for input data validity
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-        String[] line;
-
-        // check if all columns in input are valid
-        for (String col : htblColNameValue.keySet()) {
-            if (!cslsColNames.contains(col)) {
-                throw new DBAppException("Column " + col + " does not exist");
-            }
-        }
-
-        boolean found = false;
-        while ((line = reader.readNext()) != null) {
-            // Process each line of the CSV file
-
-               if (line[0].equals(sTableName)) {
-                     found = true;
-
-                   // check for data type
-                   if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
-                       throw new DBAppException("Invalid data type for column " + line[1]);
-                   }
-
-                   // check for min and max
-                   if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
-                           || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
-                       throw new DBAppException("Value for column " + line[1] + " is out of range");
-                   }
-
-                   // check if date in input is in the correct format "YYYY-MM-DD"
-                   if (line[2].equals("java.util.Date")) {
-                       String[] date = ((String) htblColNameValue.get(line[1])).split("-");
-                       if (date.length != 3) {
-                           throw new DBAppException("Invalid date format for column " + line[1]);
-                       }
-                       if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
-                           throw new DBAppException("Invalid date format for column " + line[1]);
-                       }
-                   }
-
-               } else if (found) {
-                   break; // no need to continue searching
-               }
-
-        }
+        checkValidityOfData(htblColNameValue);
 
         // check if the number of columns in the input matches the number of columns in the metadata
         //if(htblColNameValue.size() != cslsColNames.size()) {
@@ -162,13 +119,9 @@ public class Table implements java.io.Serializable {
             iNumOfPages++;
             Page pPage1 = new Page(sTableName, iNumOfPages - 1, false);
             pPage1.vRecords.add(htblColNameValue);
-            Serializable oMinClusterVal = (Serializable) pPage1.vRecords.get(0).get(sClusteringKey);
-            Serializable oMaxClusterVal = (Serializable) pPage1.vRecords.get(pPage1.size()-1).get(sClusteringKey);
-            // update minMax vector
-            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
-            hPageFullStatus.put(iNumOfPages - 1, pPage1.isFull());
-            vNumberOfRowsPerPage.add(iNumOfPages - 1, 1);
+            updatePageMeta(pPage1);
             pPage1.serializePage();
+
         } else { // insert in some page
             Object oClusterValue = htblColNameValue.get(sClusteringKey);
             int iInsertPageNum = 0; // case that the input is the smallest value
@@ -205,13 +158,7 @@ public class Table implements java.io.Serializable {
                     iNumOfPages++;
                     Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
                     pNewPage.vRecords.add(htblLastRow);
-
-                    // update minMax vector
-                    Serializable oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
-                    Serializable oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size()-1).get(sClusteringKey);
-                    vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
-                    hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
-                    vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
+                    updatePageMeta(pNewPage);
                     pNewPage.serializePage();
 
                 } else {
@@ -225,13 +172,7 @@ public class Table implements java.io.Serializable {
                             // get the last row in the page and delete it
                             htblLastRow = pPage.vRecords.get(pPage.size()-1);
                             pPage.vRecords.remove(pPage.size()-1);
-
-                            // update minMax vector
-                            Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
-                            Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pPage.size()-1).get(sClusteringKey);
-                            vecMinMaxOfPagesForClusteringKey.set(i, new rangePair<>(oMinClusterVal, oMaxClusterVal));
-                            hPageFullStatus.put(i, pPage.isFull());
-                            vNumberOfRowsPerPage.set(i, pPage.size());
+                            updatePageMeta(pPage);
                             pPage.serializePage();
 
                             // check if last page
@@ -240,30 +181,14 @@ public class Table implements java.io.Serializable {
                                 iNumOfPages++;
                                 Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
                                 pNewPage.vRecords.add(htblLastRow);
-
-                                // update minMax vector
-                                oMinClusterVal = (Serializable) pNewPage.vRecords.get(0).get(sClusteringKey);
-                                oMaxClusterVal = (Serializable) pNewPage.vRecords.get(pNewPage.size() - 1).get(sClusteringKey);
-                                vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
-                                hPageFullStatus.put(iNumOfPages - 1, pNewPage.isFull());
-                                vNumberOfRowsPerPage.add(iNumOfPages - 1, pNewPage.size());
+                                updatePageMeta(pNewPage);
                                 pNewPage.serializePage();
                                 break;
                             }
                         } else { // page is not full
                             // add to page and break
                             pPage.sortedInsert(htblLastRow, sClusteringKey);
-
-                            // update minMax vector of insertPage
-                            Serializable oMinClusterVal = (Serializable) pPage.vRecords.get(0).get(sClusteringKey);
-                            Serializable oMaxClusterVal = (Serializable) pPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
-                            vecMinMaxOfPagesForClusteringKey.set(pPage.index, new rangePair<>(oMinClusterVal, oMaxClusterVal));
-
-                            // update page full status
-                            hPageFullStatus.put(pPage.index, pPage.isFull());
-
-                            // update number of rows in page
-                            vNumberOfRowsPerPage.set(pPage.index, pPage.size());
+                            updatePageMeta(pPage);
                             pPage.serializePage();
                             break;
                         }
@@ -271,15 +196,7 @@ public class Table implements java.io.Serializable {
                 }
             }
             // update minMax vector of insertPage
-            Serializable oMinClusterVal = (Serializable) pInsertPage.vRecords.get(0).get(sClusteringKey);
-            Serializable oMaxClusterVal = (Serializable) pInsertPage.vRecords.get(pInsertPage.size()-1).get(sClusteringKey);
-            vecMinMaxOfPagesForClusteringKey.set(iInsertPageNum, new rangePair<>(oMinClusterVal, oMaxClusterVal));
-
-            // update page full status
-            hPageFullStatus.put(iInsertPageNum, pInsertPage.isFull());
-
-            // update number of rows in page
-            vNumberOfRowsPerPage.set(iInsertPageNum, pInsertPage.size());
+            updatePageMeta(pInsertPage);
             pInsertPage.serializePage();
         }
         iNumOfRows++;
@@ -486,6 +403,58 @@ public class Table implements java.io.Serializable {
 
     }
 
+    public void updatePageMeta(Page p) {
+        Serializable oMinClusterVal = (Serializable) p.vRecords.get(0).get(sClusteringKey);
+        Serializable oMaxClusterVal = (Serializable) p.vRecords.get(p.size()-1).get(sClusteringKey);
+        vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
+        hPageFullStatus.put(p.index, p.isFull());
+        vNumberOfRowsPerPage.add(p.index, p.size());
+    }
 
+    public void checkValidityOfData(Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException, CsvValidationException {
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        String[] line;
 
+        // check if all columns in input are valid
+        for (String col : htblColNameValue.keySet()) {
+            if (!cslsColNames.contains(col)) {
+                throw new DBAppException("Column " + col + " does not exist");
+            }
+        }
+
+        boolean found = false;
+        while ((line = reader.readNext()) != null) {
+            // Process each line of the CSV file
+
+            if (line[0].equals(sTableName)) {
+                found = true;
+
+                // check for data type
+                if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
+                    throw new DBAppException("Invalid data type for column " + line[1]);
+                }
+
+                // check for min and max
+                if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
+                        || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
+                    throw new DBAppException("Value for column " + line[1] + " is out of range");
+                }
+
+                // check if date in input is in the correct format "YYYY-MM-DD"
+                if (line[2].equals("java.util.Date")) {
+                    String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                    if (date.length != 3) {
+                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    }
+                    if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
+                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    }
+                }
+
+            } else if (found) {
+                break; // no need to continue searching
+            }
+
+        }
+    }
 }
