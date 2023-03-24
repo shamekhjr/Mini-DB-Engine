@@ -50,13 +50,8 @@ public class Table implements java.io.Serializable {
         //making sure column data types are valid
         //the valid datatypes are: java.lang.Integer , java.lang.String ,
         //java.lang.Double , java.util.Date (Note: date acceptable format is "YYYY-MM-DD")
-        for (String key : htblColNameType.keySet()) {
-            if (!htblColNameType.get(key).equals("java.lang.Integer") &&
-                    !htblColNameType.get(key).equals("java.lang.String") &&
-                    !htblColNameType.get(key).equals("java.lang.Double") &&
-                    !htblColNameType.get(key).equals("java.util.Date")) {
-                    throw new DBAppException("Invalid data type for column " + key);
-            }
+        if (!isColDataTypeValid(htblColNameType)) {
+            throw new DBAppException("Invalid column data type");
         }
 
 
@@ -456,5 +451,17 @@ public class Table implements java.io.Serializable {
             }
 
         }
+    }
+
+    public static boolean isColDataTypeValid(Hashtable<String,String> htblColNameType) {
+        for (String col : htblColNameType.keySet()) {
+            if (!htblColNameType.get(col).equals("java.lang.Integer") &&
+                    !htblColNameType.get(col).equals("java.lang.String") &&
+                    !htblColNameType.get(col).equals("java.lang.Double") &&
+                    !htblColNameType.get(col).equals("java.util.Date")) {
+                return false;
+            }
+        }
+        return true;
     }
 }
