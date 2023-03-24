@@ -3,6 +3,8 @@ import java.util.*;
 import java.util.Hashtable;
 
 public class Page implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 987662595421l;
     public Vector<Hashtable<String, Object>> vRecords; // contain list of hashtable which represent records
     public String sTableName;
     public String sClusteringKey;

@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 
 public class Table implements java.io.Serializable {
+    @Serial
+    private static final long serialVersionUID = 123862598456l;
     String sTableName;
     String sClusteringKey;
     int iNumOfPages;

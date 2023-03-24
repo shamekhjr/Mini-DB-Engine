@@ -59,8 +59,6 @@ public class DBApp {
     public void updateTable(String strTableName, String strClusteringKeyValue,
                             Hashtable<String,Object> htblColNameValue ) throws DBAppException {
 
-
-
     }
 
 
@@ -125,60 +123,65 @@ public class DBApp {
         htblColNameMax.put("gpa", "4.0");
 
 
+
         dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
 
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 1);
-            put("name", "Ahmed");
-            put("gpa", 0.9);
-        }});
+//        for (int i = 400; i >= 0; i--) {
+//            int finalI = i;
+//            dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//                put("id", finalI);
+//                put("name", "n" + finalI);
+//                put("gpa", 0.9);
+//            }});
+//            System.out.println("inserted " + i);
+//        }
 
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 2);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 3);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 5);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 4);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 6);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 0);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 12);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 12);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 2);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 3);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 5);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 4);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 6);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 0);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 12);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 12);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
 
     }
 
