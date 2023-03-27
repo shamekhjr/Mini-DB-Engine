@@ -101,7 +101,7 @@ public class DBApp {
         return null;
     }
 
-    public static void main(String[] args) throws DBAppException, IOException, CsvValidationException {
+    public static void main(String[] args) throws Exception {
 
         //testing Table class creation
         String strTableName = "Student";
@@ -126,15 +126,22 @@ public class DBApp {
 
         dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
 
-//        for (int i = 400; i >= 0; i--) {
-//            int finalI = i;
-//            dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//                put("id", finalI);
-//                put("name", "n" + finalI);
-//                put("gpa", 0.9);
-//            }});
-//            System.out.println("inserted " + i);
-//        }
+        // count time
+        long startTime = System.currentTimeMillis();
+        for (int i = 1000; i >= 0; i--) {
+            int finalI = i;
+            dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+                put("id", finalI);
+                put("name", "n" + finalI);
+                put("gpa", 0.9);
+            }});
+            System.out.println("inserted " + i);
+        }
+        long endTime = System.currentTimeMillis();
+        System.out.println("Took " + (endTime - startTime)/1000 + " seconds");
+
+        Table t = Table.loadTable("Student");
+        t.showPage(0);
 
 //        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
 //            put("id", 2);

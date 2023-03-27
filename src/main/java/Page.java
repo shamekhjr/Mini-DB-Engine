@@ -70,6 +70,15 @@ public class Page implements Serializable {
         // binary search the position to insert into
         int lo = 0;
         int hi = vRecords.size() - 1;
+
+        // check minMax first
+        if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(lo).get(sClusteringKey)) <= 0) {
+            vRecords.add(lo, hInsertRow);
+            return;
+        } else if (((Comparable)hInsertRow.get(sClusteringKey)).compareTo(vRecords.get(hi).get(sClusteringKey)) >= 0) {
+            vRecords.add(hInsertRow);
+            return;
+        }
         //System.out.println(hi);
         int mid = (lo + hi) / 2;
         while (lo < hi - 1) {
