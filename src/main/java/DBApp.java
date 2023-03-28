@@ -128,7 +128,7 @@ public class DBApp {
 
         // count time
         long startTime = System.currentTimeMillis();
-        for (int i = 1000; i >= 0; i--) {
+        for (int i = 400; i >= 1; i--) {
             int finalI = i;
             dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
                 put("id", finalI);
@@ -138,7 +138,7 @@ public class DBApp {
             System.out.println("inserted " + i);
         }
         long endTime = System.currentTimeMillis();
-        System.out.println("Took " + (endTime - startTime)/1000 + " seconds");
+        System.out.println("Took " + ((endTime - startTime)/1000)/60 + " minutes");
 
         Table t = Table.loadTable("Student");
         t.showPage(0);

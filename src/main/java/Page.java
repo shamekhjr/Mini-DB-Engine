@@ -9,14 +9,30 @@ public class Page implements Serializable {
     public String sTableName;
     public String sClusteringKey;
     public int index;
+    public int maxRecords;
 
 
 
     public Page(String sTable, int index, Boolean load)
     {
-        this.vRecords = new Vector<>();
+
         this.sTableName = sTable;
         this.index = index;
+        String _filename = "src/main/resources/DBApp.config"; // File that contain configuration
+        Properties configProperties = new Properties();
+        try (FileInputStream fis = new FileInputStream(_filename))
+        {
+            configProperties.load(fis);
+        }
+        catch (FileNotFoundException ex)
+        {
+            ex.printStackTrace();
+        }
+        catch (IOException e)  {
+            e.printStackTrace();
+        }
+        this.maxRecords = Integer.parseInt(configProperties.getProperty("MaximumRowsCountinTablePage"));
+        this.vRecords = new Vector<>(maxRecords);
         // load page
         if (load) {
             try {
@@ -41,24 +57,7 @@ public class Page implements Serializable {
 
     public boolean isFull ()
     {
-        String _filename = "src/main/resources/DBApp.config"; // File that contain configuration
-        Properties configProperties = new Properties();
-
-        try (FileInputStream fis = new FileInputStream(_filename))
-        {
-            configProperties.load(fis);
-        }
-        catch (FileNotFoundException ex)
-        {
-            ex.printStackTrace();
-        }
-        catch (IOException e)  {
-            e.printStackTrace();
-        }
-
-        int n = Integer.parseInt(configProperties.getProperty("MaximumRowsCountinTablePage"));
-
-        return (n == vRecords.size());
+        return (maxRecords == vRecords.size());
     }
 
     public boolean isEmpty ()
