@@ -95,15 +95,19 @@ public class Table implements java.io.Serializable {
             - save page after modification/creation
             - save table at the end (done in DBApp.java)
             - check if primary key is unique
+            - check if primary key present
+            - insert nulls in missing columns
         */
 
         // check for input data validity
         checkValidityOfData(htblColNameValue);
 
-        // check if the number of columns in the input matches the number of columns in the metadata
-        //if(htblColNameValue.size() != cslsColNames.size()) {
-        //    throw new DBAppException("Invalid number of columns");
-        //}
+        // insert nulls in the missing columns
+        for (String col: cslsColNames) {
+            if (!htblColNameValue.containsKey(col)) {
+                htblColNameValue.put(col, null);
+            }
+        }
 
         // check if primary key already exists
         if (cslsClusterValues.contains(htblColNameValue.get(sClusteringKey))) { // instead of searching for the record
@@ -573,6 +577,11 @@ public class Table implements java.io.Serializable {
             if (!cslsColNames.contains(col)) {
                 throw new DBAppException("Column " + col + " does not exist");
             }
+        }
+
+        // check if primary key is in input
+        if (!htblColNameValue.containsKey(sClusteringKey)) {
+            throw new DBAppException("Primary key " + sClusteringKey + " is not in input");
         }
 
         boolean found = false;
