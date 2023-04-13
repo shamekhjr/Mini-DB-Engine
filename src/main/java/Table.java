@@ -207,9 +207,9 @@ public class Table implements java.io.Serializable {
         //TODO
         //1- search for all relevant records based on conditions (DONE)
         //2- remove the records in descending order (akher index fe akher page le awel index fe awel page) (DONE)
-        //3- update minMax
+        //3- update minMax (DONE)
         //4- inter-vector shiftation (not needed anymore)
-        //5- re-serialize and save pages (do in dbapp.java)
+        //5- re-serialize and save pages (do in dbapp.java) (DONE)
 
         //search for all relevant data given the conditions
         //first integer is pageNumber
@@ -238,26 +238,46 @@ public class Table implements java.io.Serializable {
 
             //update hPageFullStatus
             hPageFullStatus.put(iPageToLoad, false);
-        }
 
-        //need to handle deleting page if empty
-        //need to handle deleting table if empty
-
-        //inter-vector shiftation (not needed anymore)
-        for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
-
-            //check if page is not full
-            //if it is not full, i know i should get values from next non-empty pages and insert
-            if(!hPageFullStatus.get(k)) {
-                for (int j = k + 1; j < this.iNumOfPages; j++) {
-
-                    if (vNumberOfRowsPerPage.get(j) > 0) {
-                        //we need to remove records from this page and put them in page k
-                    }
-                }
+            }
+        //if page is empty, delete page
+        for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
+            if (vNumberOfRowsPerPage.get(i) == 0) {
+                File f = new File("src/main/resources/data/" + strTableName + "/" + sClusteringKey + "/" + i + ".class");
+                f.delete();
+                vNumberOfRowsPerPage.remove(i);
+                hPageFullStatus.remove(i);
+                iNumOfPages--;
+                i--;
             }
 
         }
+
+        //TODO:need to handle deleting page if empty
+        //TODO:need to handle deleting table if empty
+
+        //inter-vector shiftation (not needed anymore)
+//        for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
+//
+//            //check if page is not full
+//            //if it is not full, i know i should get values from next non-empty pages and insert
+//            if(!hPageFullStatus.get(k)) {
+//                for (int j = k + 1; j < this.iNumOfPages; j++) {
+//
+//                    if (vNumberOfRowsPerPage.get(j) > 0) {
+//                        //we need to remove records from this page and put them in page k
+//                    }
+//                }
+//            }
+//
+//        }
+
+        //if table is empty, delete entire table
+        if (iNumOfRows == 0) {
+            File f = new File("src/main/java/data/" + strTableName);
+            f.delete();
+        }
+
     }
 
     public void updateTable(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException, ParseException {
