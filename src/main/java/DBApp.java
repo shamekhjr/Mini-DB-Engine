@@ -1,10 +1,10 @@
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.*;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.*;
 
 public class DBApp {
     public void init() {
@@ -48,7 +48,6 @@ public class DBApp {
         } catch (Exception e) { // if table does not exist or some error happened
             throw new DBAppException(e.getMessage());
         }
-
     }
 
 
@@ -58,7 +57,14 @@ public class DBApp {
     // strClusteringKeyValue is the value to look for to find the row to update.
     public void updateTable(String strTableName, String strClusteringKeyValue,
                             Hashtable<String,Object> htblColNameValue ) throws DBAppException {
-
+        // load table data from hard disk
+        try {
+            Table tTable = Table.loadTable(strTableName);
+            tTable.updateTable(strClusteringKeyValue, htblColNameValue);
+            tTable.serializeTable();
+        } catch (Exception e) { // if table does not exist or some error happened
+            throw new DBAppException(e.getMessage());
+        }
     }
 
 
@@ -92,14 +98,16 @@ public class DBApp {
     }
 
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
-        return null;
 
+        return null;
     }
 
     //bonus
     public Iterator parseSQL( StringBuffer strbufSQL ) throws DBAppException {
+
         return null;
     }
+
 
     public static void main(String[] args) throws Exception {
 
@@ -126,7 +134,7 @@ public class DBApp {
 
         dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
 
-        // count time
+/*        // count time
         long startTime = System.currentTimeMillis();
         for (int i = 400; i >= 1; i--) {
             int finalI = i;
@@ -141,54 +149,78 @@ public class DBApp {
         System.out.println("Took " + ((endTime - startTime)/1000)/60 + " minutes");
 
         Table t = Table.loadTable("Student");
+        t.showPage(0);*/
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 2);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 3);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 5);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 4);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 6);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 12);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 13);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 0);
+            put("name", "AAAAA");
+            put("gpa", 0.34);
+        }});
+
+
+        Table t = Table.loadTable("Student");
         t.showPage(0);
 
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 2);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 3);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 5);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 4);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 6);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 0);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 12);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
-//
-//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-//            put("id", 12);
-//            put("name", "AAAAA");
-//            put("gpa", 0.34);
-//        }});
+        dbApp.updateTable(strTableName, "13", new Hashtable<String, Object>() {{
+            put("gpa", 0.01);
+        }});
+        dbApp.updateTable(strTableName, "12", new Hashtable<String, Object>() {{
+            put("gpa", 3.0);
+            put("name","AAAA");
+        }});
+        dbApp.updateTable(strTableName, "5", new Hashtable<String, Object>() {{
+            put("name","BBBB");
+        }});
+        dbApp.updateTable(strTableName, "0", new Hashtable<String, Object>() {{
+            put("name","CCCC");
+            put("gpa", 2.0);
+        }});
+
+        t.showPage(0);
+
+        t.deleteTable();
+        clearCSV();
 
     }
 
@@ -250,4 +282,27 @@ public class DBApp {
         }
         return false;
     }
+
+    /*
+     * remove all the data in the CSV file
+     */
+    public static void clearCSV() throws IOException, CsvException {
+
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        List<String[]> allElements = reader.readAll();
+        List<String[]> removeElements = new LinkedList<>();
+        int size = allElements.size();
+
+        for (int i = 1; i < size; i++)  {
+            removeElements.add(allElements.get(i));
+        }
+        allElements.removeAll(removeElements);
+
+        FileWriter sw = new FileWriter("src/main/java/metadata.csv");
+        CSVWriter writer = new CSVWriter(sw);
+        writer.writeAll(allElements);
+        writer.close();
+    }
+
+
 }

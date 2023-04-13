@@ -1,4 +1,10 @@
+import com.opencsv.CSVIterator;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Hashtable;
 
@@ -13,11 +19,12 @@ public class Page implements Serializable {
 
 
 
-    public Page(String sTable, int index, Boolean load)
+    public Page(String sTable, String sClusteringKey, int index, Boolean load)
     {
 
         this.sTableName = sTable;
         this.index = index;
+        this.sClusteringKey = sClusteringKey;
         String _filename = "src/main/resources/DBApp.config"; // File that contain configuration
         Properties configProperties = new Properties();
         try (FileInputStream fis = new FileInputStream(_filename))
@@ -97,13 +104,53 @@ public class Page implements Serializable {
         else vRecords.add(hi, hInsertRow);
     }
 
-    public void updatePage(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)
-    {
-        // Problem: What if we updated a record which need to inserted in another page ?
-        // If the record need to be inserted in another page, then we need:
-            // 1. Delete the record.
-            // 2. Update the record.
-            // 3. Insert the record.
+    public void updatePage(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws CsvValidationException, IOException, ParseException, DBAppException {
+
+        // Step 1: Search for the targeted record based on the Clustering key.
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        String line[];
+        SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
+
+        while ((line = reader.readNext()) != null) {
+            if (line[0].equals(sTableName) && line[1].equals(sClusteringKey))
+            {
+                if (line[2].equals("java.util.Date")) {
+                    Date date = formatter.parse(strClusteringKeyValue);
+                    htblColNameValue.put(sClusteringKey, date);
+                }
+
+                if (line[2].equals("java.lang.Integer")) {
+                    Integer i = Integer.parseInt(strClusteringKeyValue);
+                    htblColNameValue.put(sClusteringKey, i);
+                }
+
+                if (line[2].equals("java.lang.String"))  {
+                    String s = strClusteringKeyValue;
+                    htblColNameValue.put(sClusteringKey, s);
+                }
+
+                if (line[2].equals("java.lang.Double")) {
+                    Double d = Double.parseDouble(strClusteringKeyValue);
+                    htblColNameValue.put(sClusteringKey, d);
+                }
+            }
+        }
+
+        Vector<Integer> tempvRecords = this.searchPage(htblColNameValue);
+        int size = tempvRecords.size();
+
+        if (size == 0) {
+            throw new DBAppException("Primary key does not exist");
+        }
+
+        for (int i : tempvRecords) {
+            // Get the index of the record in the page
+            Hashtable<String, Object> hTemp = vRecords.get(i);
+            for (String key : htblColNameValue.keySet())
+            {
+                    hTemp.put(key, htblColNameValue.get(key));
+            }
+        }
     }
 
     public void deleteRecord(Hashtable<String, Object> htblColNameValue)
@@ -135,11 +182,11 @@ public class Page implements Serializable {
             int left = 0, right = sizeOfPage - 1;
             int mid = -1;
             while (left <= right) {
-                mid = (left + right) / 2;
-                if (((Comparable) vRecords.get(mid).get(sClusteringKey)).compareTo(((Comparable) hCondition.get(sClusteringKey))) > 0) {
+                mid = left + (right - left) / 2;
+                if (((Comparable) vRecords.get(mid).get(sClusteringKey)).compareTo(((Comparable) hCondition.get(sClusteringKey))) < 0) {
                     left = mid + 1;
-                } else if (((Comparable) vRecords.get(mid).get(sClusteringKey)).compareTo(((Comparable) hCondition.get(sClusteringKey))) < 0) {
-                    right = mid;
+                } else if (((Comparable) vRecords.get(mid).get(sClusteringKey)).compareTo(((Comparable) hCondition.get(sClusteringKey))) > 0) {
+                    right = mid - 1;
                 } else {
                     break;
                 }
@@ -203,7 +250,6 @@ public class Page implements Serializable {
         }
     }
 
-    // delete page
     public void deletePage() {
         File myObj = new File(this.sTableName+"_page"+ index + ".class");
         myObj.delete();

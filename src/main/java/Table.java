@@ -3,8 +3,11 @@ import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -114,7 +117,7 @@ public class Table implements java.io.Serializable {
         // check if this is the first insert
         if (iNumOfPages == 0) {
             iNumOfPages++;
-            Page pPage1 = new Page(sTableName, iNumOfPages - 1, false);
+            Page pPage1 = new Page(sTableName, sClusteringKey, iNumOfPages - 1, false);
             pPage1.vRecords.add(htblColNameValue);
             updatePageMeta(pPage1);
             pPage1.serializePage();
@@ -134,7 +137,7 @@ public class Table implements java.io.Serializable {
                 }
             }
 
-            pInsertPage = new Page(sTableName, iInsertPageNum, true);
+            pInsertPage = new Page(sTableName, sClusteringKey, iInsertPageNum, true);
 
 
             boolean bIsFull = pInsertPage.isFull();
@@ -153,7 +156,7 @@ public class Table implements java.io.Serializable {
                 if (iInsertPageNum == iNumOfPages - 1) {
                     // insert in new page
                     iNumOfPages++;
-                    Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
+                    Page pNewPage = new Page(sTableName, sClusteringKey,iNumOfPages - 1, false);
                     pNewPage.vRecords.add(htblLastRow);
                     updatePageMeta(pNewPage);
                     pNewPage.serializePage();
@@ -161,7 +164,7 @@ public class Table implements java.io.Serializable {
                 } else {
                     // loop to shift to the next pages
                     for (int i = iInsertPageNum + 1; i < iNumOfPages; i++) {
-                        Page pPage = new Page(sTableName, i, true);
+                        Page pPage = new Page(sTableName, sClusteringKey, i, true);
                         if (pPage.isFull()) {
                             // add to page and shift the extra row in this page to the next page if exists
                             pPage.sortedInsert(htblLastRow, sClusteringKey);
@@ -176,7 +179,7 @@ public class Table implements java.io.Serializable {
                             if (pPage.index == iNumOfPages - 1) {
                                 // insert in new page
                                 iNumOfPages++;
-                                Page pNewPage = new Page(sTableName, iNumOfPages - 1, false);
+                                Page pNewPage = new Page(sTableName, sClusteringKey, iNumOfPages - 1, false);
                                 pNewPage.vRecords.add(htblLastRow);
                                 updatePageMeta(pNewPage);
                                 pNewPage.serializePage();
@@ -224,7 +227,7 @@ public class Table implements java.io.Serializable {
             int iRecordIndexInPage = vRelevantRecords.get(i).val1.val2;
 
             //load the page
-            Page pPageToLoad = new Page(strTableName, iPageToLoad, true);
+            Page pPageToLoad = new Page(strTableName, sClusteringKey, iPageToLoad, true);
             htblPagesTemp.put(iPageToLoad, pPageToLoad);
 
             //remove the record
@@ -257,17 +260,140 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    public void updateTable() {
+    public void updateTable(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException, ParseException {
         /* 2 cases:
-            1- updating a value of the cluster key
+            1- updating a value of the cluster key --> No update of key (Check Piazza).
             2- updating a values not related to the cluster key
 
             for case 1:
                 call delete method then call insert with the updated record
+                    --> We do not have to delete the record as it would be sorted based on its Primary key which is *fixed*
             for case 2:
                 call search then update
-            goodluck future implementer :)
+                    --> Hence our update method will relay on just searching for the Clustering key of the record we want to update and change the values in the columns defined in the htblColNameValue
         */
+
+        // Recall: we update one row *only*
+        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        String[] line;
+        SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
+
+        // Check that data that need to be updated is valid
+        // check if all columns in input are valid
+        for (String col : htblColNameValue.keySet()) {
+            if (!cslsColNames.contains(col)) {
+                throw new DBAppException("Column " + col + " does not exist");
+            }
+        }
+
+        while ((line = reader.readNext()) != null) {
+            // Process each line of the CSV file
+            if (line[0].equals(sTableName) && htblColNameValue.get(line[1]) != null) {
+
+                // check for data type
+                if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
+                    throw new DBAppException("Invalid data type for column " + line[1]);
+                }
+
+                // check for min and max
+                if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
+                        || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
+                    throw new DBAppException("Value for column " + line[1] + " is out of range");
+                }
+
+                // check if date in input is in the correct format "YYYY-MM-DD"
+                if (line[2].equals("java.util.Date")) {
+                    String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                    if (date.length != 3) {
+                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    }
+                    if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
+                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    }
+                }
+
+            }
+
+        }
+
+        reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        // Check that data of the clustering key is valid
+        while ((line = reader.readNext()) != null)
+        {
+            if (line[0].equals(sTableName) && line[1].equals(sClusteringKey) && Boolean.parseBoolean(line[3]))
+            {
+                if (line[2].equals("java.util.Date")) {
+                    Date date = formatter.parse(strClusteringKeyValue);
+                    htblColNameValue.put(sClusteringKey, date);
+                }
+
+                if (line[2].equals("java.lang.Integer")) {
+                    Integer i = Integer.parseInt(strClusteringKeyValue);
+                    htblColNameValue.put(sClusteringKey, i);
+                }
+
+                if (line[2].equals("java.lang.String"))  {
+                    String s = strClusteringKeyValue;
+                    htblColNameValue.put(sClusteringKey, s);
+                }
+
+                if (line[2].equals("java.lang.Double")) {
+                    Double d = Double.parseDouble(strClusteringKeyValue);
+                    htblColNameValue.put(sClusteringKey, d);
+                }
+
+                // check for data type
+                if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
+                    throw new DBAppException("Invalid data type for column " + line[1]);
+                }
+
+                // check for min and max
+                if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
+                        || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
+                    throw new DBAppException("Value for column " + line[1] + " is out of range");
+                }
+
+                // check if date in input is in the correct format "YYYY-MM-DD"
+                if (line[2].equals("java.util.Date")) {
+                    String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                    if (date.length != 3) {
+                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    }
+                    if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
+                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    }
+                }
+            }
+        }
+
+        // Step 1: Search for the page that contain the Clustering key value.
+        Page targetPage;
+        int indexPage = -1;
+
+        for (int i = 0; i < iNumOfPages; i++) {
+
+            if (((Comparable)htblColNameValue.get(sClusteringKey)).compareTo((Comparable)vecMinMaxOfPagesForClusteringKey.get(i).min) >= 0) {
+                indexPage = i;
+            }
+            else {
+                break;
+            }
+        }
+
+
+        // If the user tried to update a record with invalid primary key
+        if (indexPage == -1) {
+            throw new DBAppException("Primary Key does not exists");
+        }
+
+        // Step 2: Deserialize the page at index [indexPage]
+        targetPage = new Page(sTableName, sClusteringKey, indexPage, true);
+
+        // Step 3: Update the record
+        targetPage.updatePage(strClusteringKeyValue, htblColNameValue);
+
+        // Step 4: Serialize the page
+        targetPage.serializePage();
     }
 
     public void searchInTable() {
@@ -278,6 +404,10 @@ public class Table implements java.io.Serializable {
     public void deleteTable() {
         File myObj = new File(this.sTableName + ".class");
         myObj.delete();
+        for (int i = 0; i < iNumOfPages; i++) {
+            Page tmpPage = new Page (sTableName, sClusteringKey, i, false);
+            tmpPage.deletePage();
+        }
     }
 
     public void serializeTable() {
@@ -308,7 +438,7 @@ public class Table implements java.io.Serializable {
                     iPageNum = i;
                 } else break;
             }
-            Page pCurrentPage = new Page(sTableName, iPageNum, true);
+            Page pCurrentPage = new Page(sTableName, sClusteringKey , iPageNum, true);
             // binary search (only one row has this primary cluster key)
             int lo = 0;
             int hi = pCurrentPage.size() - 1;
@@ -340,7 +470,7 @@ public class Table implements java.io.Serializable {
             // for each page
             for (int i = 0; i < iNumOfPages; i++) {
                 // load (de-serialize the page)
-                Page pCurrentPage = new Page(sTableName, i, true);
+                Page pCurrentPage = new Page(sTableName, sClusteringKey, i, true);
 
                 int index = 0;
                 // for each record in page
@@ -403,7 +533,13 @@ public class Table implements java.io.Serializable {
     public void updatePageMeta(Page p) {
         Serializable oMinClusterVal = (Serializable) p.vRecords.get(0).get(sClusteringKey);
         Serializable oMaxClusterVal = (Serializable) p.vRecords.get(p.size()-1).get(sClusteringKey);
-        vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
+
+        if (vecMinMaxOfPagesForClusteringKey.size() > p.index) { // if the page index already exists in the vecMinMaxOfPagesForClusteringKey then we only need to update its minimum and maximum values
+            vecMinMaxOfPagesForClusteringKey.set(p.index, new rangePair<>(oMinClusterVal, oMaxClusterVal));
+        }
+        else {
+            vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
+        }
         hPageFullStatus.put(p.index, p.isFull());
         vNumberOfRowsPerPage.add(p.index, p.size());
     }
@@ -468,7 +604,7 @@ public class Table implements java.io.Serializable {
     }
 
     public void showPage(int iPageNum) throws IOException, CsvValidationException {
-        Page p = new Page(sTableName, iPageNum, true);
+        Page p = new Page(sTableName, sClusteringKey, iPageNum, true);
         System.out.println("Page " + iPageNum + " has " + p.size() + " records ======");
         int i = 1;
         for (Hashtable<String, Object> ht : p.vRecords) {

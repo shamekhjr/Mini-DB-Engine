@@ -13,6 +13,7 @@ public class SQLTerm {
 
     //empty constructor
     public SQLTerm() {
+
     }
 
 
