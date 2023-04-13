@@ -240,8 +240,8 @@ public class Table implements java.io.Serializable {
             //decrement number of rows in the page
             this.vNumberOfRowsPerPage.set(iPageToLoad, vNumberOfRowsPerPage.get(iPageToLoad) - 1);
 
-            //update hPageFullStatus
-            hPageFullStatus.put(iPageToLoad, false);
+            //update page meta
+            updatePageMeta(pPageToLoad);
 
             }
         //if page is empty, delete page
