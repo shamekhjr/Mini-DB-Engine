@@ -448,8 +448,7 @@ public class Table implements java.io.Serializable {
 
     // chad search; serves selectFromTable, deleteFromTable (supplies the records and their locations: page, index)
     public Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
-        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> result = new Vector<>();
-        Vector<Hashtable<String, Object>> vRecords = new Vector<>(); // actual page records
+        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> result = new Vector<>(); // page, index, record
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
         if (hCondition.keySet().contains(sClusteringKey)) { // binary search
@@ -457,10 +456,15 @@ public class Table implements java.io.Serializable {
             // consult hanti-kanti-ultra-omega-gadaym-speedy minProMax vector to fetch da page
             int iPageNum = 0;
             for (int i = 0; i < iNumOfPages; i++) {
-                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0) {
-                    // keep finding the page until the min is greater than the cluster value
+                if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) <= 0
+                && ((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).max).compareTo((Comparable) oClusterValue) >= 0) {
+                    // must be within min and max as we are searching not inserting
                     iPageNum = i;
-                } else break;
+                    break;
+                } else if (((Comparable) vecMinMaxOfPagesForClusteringKey.get(i).min).compareTo((Comparable) oClusterValue) > 0) {
+                    // if the value is less than the min of the page, then it is not in the table
+                    return result;
+                }
             }
             Page pCurrentPage = new Page(sTableName, sClusteringKey , iPageNum, true);
             // binary search (only one row has this primary cluster key)
