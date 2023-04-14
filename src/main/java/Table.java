@@ -223,6 +223,19 @@ public class Table implements java.io.Serializable {
         //init hashtable of pages to keep stuff in memory
         Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
 
+        //TODO: DELETE TABLE IF INPUT IS EMPTY
+        //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES
+        //TODO: SERILAIZE THE PAGES AFTER DELETION
+
+//        String sTableName;
+//        String sClusteringKey;
+//        int iNumOfPages; D
+//        int iNumOfRows; D
+//        Hashtable<Integer, Boolean> hPageFullStatus; D
+//        ConcurrentSkipListSet<Object> cslsClusterValues; D
+//        Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey; D
+//        Vector<Integer> vNumberOfRowsPerPage; D
+
         //remove the records in descending order
         for (int i = vRelevantRecords.size() - 1; i >= 0; i--) {
 
@@ -237,8 +250,12 @@ public class Table implements java.io.Serializable {
             //remove the record
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
 
+            //remove primary key
+            cslsClusterValues.remove(htblColNameValue.get(sClusteringKey));
+
             //decrement number of rows in the page
             this.vNumberOfRowsPerPage.set(iPageToLoad, vNumberOfRowsPerPage.get(iPageToLoad) - 1);
+            iNumOfRows--;
 
             //update page meta
             updatePageMeta(pPageToLoad);
@@ -250,6 +267,7 @@ public class Table implements java.io.Serializable {
                 File f = new File("src/main/resources/data/" + strTableName + "/" + sClusteringKey + "/" + i + ".class");
                 f.delete();
                 vNumberOfRowsPerPage.remove(i);
+                vecMinMaxOfPagesForClusteringKey.remove(i);
                 hPageFullStatus.remove(i);
                 iNumOfPages--;
                 i--;
@@ -280,6 +298,8 @@ public class Table implements java.io.Serializable {
         if (iNumOfRows == 0) {
             File f = new File("src/main/java/data/" + strTableName);
             f.delete();
+            // call garbage collector
+            System.gc();
         }
 
     }
