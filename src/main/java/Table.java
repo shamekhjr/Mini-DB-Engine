@@ -225,7 +225,7 @@ public class Table implements java.io.Serializable {
 
         //TODO: DELETE TABLE IF INPUT IS EMPTY
         //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES
-        //TODO: SERILAIZE THE PAGES AFTER DELETION
+        //TODO: SERIALIZE THE PAGES AFTER DELETION
 
 //        String sTableName;
 //        String sClusteringKey;
