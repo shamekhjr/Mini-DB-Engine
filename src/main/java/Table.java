@@ -607,12 +607,21 @@ public class Table implements java.io.Serializable {
             throw new DBAppException("Primary key " + sClusteringKey + " is not in input");
         }
 
+        // check if primary key is null
+        if (htblColNameValue.get(sClusteringKey) == null) {
+            throw new DBAppException("Primary key " + sClusteringKey + " cannot be null");
+        }
+
         boolean found = false;
         while ((line = reader.readNext()) != null) {
             // Process each line of the CSV file
 
             if (line[0].equals(sTableName)) {
                 found = true;
+
+                if (htblColNameValue.get(line[1]) == null) { // ignore checks for null values
+                    continue;
+                }
 
                 // check for data type
                 if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
