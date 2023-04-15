@@ -6,4 +6,8 @@ public class DBAppException extends Exception {
     public DBAppException() {
         super();
     }
+
+    public DBAppException(Exception e) {
+        super(e);
+    }
 }
