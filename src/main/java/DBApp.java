@@ -202,7 +202,7 @@ public class DBApp {
         Table t = Table.loadTable("Student");
         t.showPage(0);
 
-        dbApp.updateTable(strTableName, "13", new Hashtable<String, Object>() {{
+       dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
             put("gpa", 0.01);
         }});
         dbApp.updateTable(strTableName, "12", new Hashtable<String, Object>() {{
@@ -218,7 +218,6 @@ public class DBApp {
         }});
 
         t.showPage(0);
-
         t.deleteTable();
         clearCSV();
 

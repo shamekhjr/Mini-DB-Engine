@@ -320,9 +320,15 @@ public class Table implements java.io.Serializable {
         CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
         String[] line;
         SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
+        Hashtable<String, Object> hCondition = new Hashtable<String, Object>();
 
-        // Check that data that need to be updated is valid
-        // check if all columns in input are valid
+
+        // Check that there is no update of the Clustering key.
+        if (htblColNameValue.containsKey(sClusteringKey)) {
+            throw new DBAppException("Can not update the clustering key: " + sClusteringKey);
+        }
+
+        // Check if all columns in input are valid
         for (String col : htblColNameValue.keySet()) {
             if (!cslsColNames.contains(col)) {
                 throw new DBAppException("Column " + col + " does not exist");
@@ -331,20 +337,21 @@ public class Table implements java.io.Serializable {
 
         while ((line = reader.readNext()) != null) {
             // Process each line of the CSV file
+            // Note: Did not use the method (checkValidityOfData) as the update query does not need to update every column in the table. Hence, I added the condition (htblColNameValue.get(line[1]) != null)
             if (line[0].equals(sTableName) && htblColNameValue.get(line[1]) != null) {
 
-                // check for data type
+                // Check for data type
                 if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
                     throw new DBAppException("Invalid data type for column " + line[1]);
                 }
 
-                // check for min and max
+                // Check for min and max
                 if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
                         || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
                     throw new DBAppException("Value for column " + line[1] + " is out of range");
                 }
 
-                // check if date in input is in the correct format "YYYY-MM-DD"
+                // Check if date in input is in the correct format "YYYY-MM-DD"
                 if (line[2].equals("java.util.Date")) {
                     String[] date = ((String) htblColNameValue.get(line[1])).split("-");
                     if (date.length != 3) {
@@ -354,89 +361,59 @@ public class Table implements java.io.Serializable {
                         throw new DBAppException("Invalid date format for column " + line[1]);
                     }
                 }
-
             }
 
-        }
-
-        reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-        // Check that data of the clustering key is valid
-        while ((line = reader.readNext()) != null)
-        {
-            if (line[0].equals(sTableName) && line[1].equals(sClusteringKey) && Boolean.parseBoolean(line[3]))
-            {
+            // Insert the Clustering key inside the htblColNameValue to help me do the search later.
+            // Note: I already checked that the Hash table (htblColNameValue) does not contain a key for the Clustering key.
+            if (line[0].equals(sTableName) && line[1].equals(sClusteringKey) && Boolean.parseBoolean(line[3])) {
                 if (line[2].equals("java.util.Date")) {
                     Date date = formatter.parse(strClusteringKeyValue);
-                    htblColNameValue.put(sClusteringKey, date);
+                    hCondition.put(sClusteringKey, date);
                 }
 
                 if (line[2].equals("java.lang.Integer")) {
                     Integer i = Integer.parseInt(strClusteringKeyValue);
-                    htblColNameValue.put(sClusteringKey, i);
+                    hCondition.put(sClusteringKey, i);
                 }
 
                 if (line[2].equals("java.lang.String"))  {
                     String s = strClusteringKeyValue;
-                    htblColNameValue.put(sClusteringKey, s);
+                    hCondition.put(sClusteringKey, s);
                 }
 
                 if (line[2].equals("java.lang.Double")) {
                     Double d = Double.parseDouble(strClusteringKeyValue);
-                    htblColNameValue.put(sClusteringKey, d);
-                }
-
-                // check for data type
-                if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
-                    throw new DBAppException("Invalid data type for column " + line[1]);
-                }
-
-                // check for min and max
-                if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
-                        || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
-                    throw new DBAppException("Value for column " + line[1] + " is out of range");
-                }
-
-                // check if date in input is in the correct format "YYYY-MM-DD"
-                if (line[2].equals("java.util.Date")) {
-                    String[] date = ((String) htblColNameValue.get(line[1])).split("-");
-                    if (date.length != 3) {
-                        throw new DBAppException("Invalid date format for column " + line[1]);
-                    }
-                    if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
-                        throw new DBAppException("Invalid date format for column " + line[1]);
-                    }
+                    hCondition.put(sClusteringKey, d);
                 }
             }
         }
 
         // Step 1: Search for the page that contain the Clustering key value.
-        Page targetPage;
-        int indexPage = -1;
-
-        for (int i = 0; i < iNumOfPages; i++) {
-
-            if (((Comparable)htblColNameValue.get(sClusteringKey)).compareTo((Comparable)vecMinMaxOfPagesForClusteringKey.get(i).min) >= 0) {
-                indexPage = i;
-            }
-            else {
-                break;
-            }
-        }
-
+        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> v = this.searchRecords(hCondition);
 
         // If the user tried to update a record with invalid primary key
-        if (indexPage == -1) {
+        System.out.println(v.size());
+        if (v.isEmpty()) {
             throw new DBAppException("Primary Key does not exists");
         }
 
-        // Step 2: Deserialize the page at index [indexPage]
-        targetPage = new Page(sTableName, sClusteringKey, indexPage, true);
+        for (Pair<Pair<Integer,Integer>,Hashtable<String,Object>> pair : v) {
+            int pageNum = pair.val1.val1;
+            int recordIndex = pair.val1.val2;
 
-        // Step 3: Update the record
-        targetPage.updatePage(strClusteringKeyValue, htblColNameValue);
+            // Step 2: Deserialize the page at index [pageNum]
+            Page targetPage = new Page(sTableName, sClusteringKey, pageNum, true);
+            Hashtable<String, Object> hTemp = targetPage.vRecords.get(recordIndex);
 
-        // Step 4: Serialize the page
-        targetPage.serializePage();
+            // Step 3: Update the record
+            for (String key : htblColNameValue.keySet())
+            {
+                hTemp.put(key, htblColNameValue.get(key));
+            }
+
+            // Step 4: Serialize the page
+            targetPage.serializePage();
+        }
     }
 
     public void searchInTable() {
@@ -490,7 +467,7 @@ public class Table implements java.io.Serializable {
             int lo = 0;
             int hi = pCurrentPage.size() - 1;
             while (lo <= hi) {
-                int mid = (lo + hi) / 2;
+                int mid = (lo + hi) / 2; //Mazen: better to do it as : mid = (lo + hi - lo)/2
                 if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) < 0) {
                     lo = mid + 1;
                 } else if (((Comparable)pCurrentPage.vRecords.get(mid).get(sClusteringKey)).compareTo(oClusterValue) > 0) {

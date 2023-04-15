@@ -107,34 +107,7 @@ public class Page implements Serializable {
     public void updatePage(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws CsvValidationException, IOException, ParseException, DBAppException {
 
         // Step 1: Search for the targeted record based on the Clustering key.
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-        String line[];
         SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
-
-        while ((line = reader.readNext()) != null) {
-            if (line[0].equals(sTableName) && line[1].equals(sClusteringKey))
-            {
-                if (line[2].equals("java.util.Date")) {
-                    Date date = formatter.parse(strClusteringKeyValue);
-                    htblColNameValue.put(sClusteringKey, date);
-                }
-
-                if (line[2].equals("java.lang.Integer")) {
-                    Integer i = Integer.parseInt(strClusteringKeyValue);
-                    htblColNameValue.put(sClusteringKey, i);
-                }
-
-                if (line[2].equals("java.lang.String"))  {
-                    String s = strClusteringKeyValue;
-                    htblColNameValue.put(sClusteringKey, s);
-                }
-
-                if (line[2].equals("java.lang.Double")) {
-                    Double d = Double.parseDouble(strClusteringKeyValue);
-                    htblColNameValue.put(sClusteringKey, d);
-                }
-            }
-        }
 
         Vector<Integer> tempvRecords = this.searchPage(htblColNameValue);
         int size = tempvRecords.size();
