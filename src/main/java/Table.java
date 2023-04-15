@@ -103,6 +103,7 @@ public class Table implements java.io.Serializable {
         checkValidityOfData(htblColNameValue);
 
         // insert nulls in the missing columns
+        // TODO: wait for dr's response
         for (String col: cslsColNames) {
             if (!htblColNameValue.containsKey(col)) {
                 htblColNameValue.put(col, null);
