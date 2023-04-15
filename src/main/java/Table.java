@@ -596,6 +596,11 @@ public class Table implements java.io.Serializable {
             if (line[0].equals(sTableName)) {
                 found = true;
 
+                // check if column is in input
+                if (!htblColNameValue.containsKey(line[1])) {
+                    continue;
+                }
+
                 if (htblColNameValue.get(line[1]) == null) { // ignore checks for null values
                     continue;
                 }
