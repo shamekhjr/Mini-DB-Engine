@@ -1,4 +1,6 @@
-public class Null {
+import java.io.Serializable;
+
+public class Null implements Serializable {
     public static  Null NULL;
 
     public static Null getInstance(){
