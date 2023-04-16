@@ -216,6 +216,13 @@ public class Table implements java.io.Serializable {
         //4- inter-vector shiftation (not needed anymore)
         //5- re-serialize and save pages (do in dbapp.java) (DONE)
 
+
+        //delete table if the input is empty
+        if (htblColNameValue.isEmpty()) {
+            deleteTable(strTableName);
+            return;
+        }
+
         //search for all relevant data given the conditions
         //first integer is pageNumber
         //second integer is recordIndex
@@ -224,7 +231,7 @@ public class Table implements java.io.Serializable {
         //init hashtable of pages to keep stuff in memory
         Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
 
-        //TODO: DELETE TABLE IF INPUT IS EMPTY
+        //TODO: DELETE TABLE IF INPUT IS EMPTY (DONE)
         //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES
         //TODO: SERIALIZE THE PAGES AFTER DELETION
         //TODO: FIX PAGE NAMES WHEN LOADING/DELETING (path name and file name notation)
@@ -260,7 +267,8 @@ public class Table implements java.io.Serializable {
             //update page meta
             updatePageMeta(pPageToLoad);
 
-            }
+        }
+
         //if page is empty, delete page
         for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
             if (vNumberOfRowsPerPage.get(i) == 0) {
@@ -272,7 +280,6 @@ public class Table implements java.io.Serializable {
                 iNumOfPages--;
                 i--;
             }
-
         }
 
         //TODO:need to handle deleting page if empty
@@ -424,6 +431,15 @@ public class Table implements java.io.Serializable {
     // Note: this method is not used in the project, not required
     public void deleteTable() {
         File myObj = new File(this.sTableName + ".class");
+        myObj.delete();
+        for (int i = 0; i < iNumOfPages; i++) {
+            Page tmpPage = new Page (sTableName, sClusteringKey, i, false);
+            tmpPage.deletePage();
+        }
+    }
+
+    public void deleteTable(String sTableName) {
+        File myObj = new File(sTableName + ".class");
         myObj.delete();
         for (int i = 0; i < iNumOfPages; i++) {
             Page tmpPage = new Page (sTableName, sClusteringKey, i, false);
