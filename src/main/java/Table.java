@@ -102,11 +102,10 @@ public class Table implements java.io.Serializable {
         // check for input data validity
         checkValidityOfData(htblColNameValue);
 
-        // insert nulls in the missing columns
-        // TODO: wait for dr's response
+        // insert nulls in the missing columns (Using a custom Null class as nulls are not allowed in the hashtable)
         for (String col: cslsColNames) {
             if (!htblColNameValue.containsKey(col)) {
-                htblColNameValue.put(col, null);
+                htblColNameValue.put(col, Null.getInstance());
             }
         }
 
