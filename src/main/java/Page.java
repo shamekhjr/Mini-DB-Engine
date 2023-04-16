@@ -226,6 +226,11 @@ public class Page implements Serializable {
     public void deletePage() {
         File myObj = new File(this.sTableName+"_page"+ index + ".class");
         myObj.delete();
+
+        // encourage the garbage collector to free the memory
+        this.vRecords = null;
+        myObj = null;
+        System.gc();
     }
 }
 
