@@ -24,8 +24,8 @@ public class DBApp {
     // htblColNameMin and htblColNameMax for passing minimum and maximum values
     // for data in the column. Key is the name of the column
     public void createTable(String strTableName, String strClusteringKeyColumn,
-                            Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
-                            Hashtable<String,String> htblColNameMax ) throws DBAppException, IOException, CsvValidationException {
+                            Hashtable<String, String> htblColNameType, Hashtable<String, String> htblColNameMin,
+                            Hashtable<String, String> htblColNameMax) throws DBAppException {
 
         //create instance of Table class
         Table table = new Table(strTableName, strClusteringKeyColumn,
@@ -39,14 +39,14 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException {
+    public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
         // load table data from hard disk
         try {
             Table tTable = Table.loadTable(strTableName);
             tTable.insertIntoTable(htblColNameValue);
             tTable.serializeTable();
         } catch (Exception e) { // if table does not exist or some error happened
-            throw new DBAppException(e.getMessage());
+            throw new DBAppException(e);
         }
     }
 
@@ -56,7 +56,7 @@ public class DBApp {
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
     public void updateTable(String strTableName, String strClusteringKeyValue,
-                            Hashtable<String,Object> htblColNameValue ) throws DBAppException {
+                            Hashtable<String, Object> htblColNameValue) throws DBAppException {
         // load table data from hard disk
         try {
             Table tTable = Table.loadTable(strTableName);
@@ -72,7 +72,7 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException, CsvException {
+    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
         //call isValidForDeletion in try/catch block
         try {
@@ -86,12 +86,9 @@ public class DBApp {
                 //serialize table
                 tTable.serializeTable();
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (CsvException e) {
-            throw new RuntimeException(e);
+
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new DBAppException(e);
         }
 
 
@@ -103,36 +100,36 @@ public class DBApp {
     }
 
     //bonus
-    public Iterator parseSQL( StringBuffer strbufSQL ) throws DBAppException {
+    public Iterator parseSQL(StringBuffer strbufSQL) throws DBAppException {
 
+        // https://theantlrguy.atlassian.net/wiki/spaces/ANTLR3/pages/2687210/Quick+Starter+on+Parser+Grammars+-+No+Past+Experience+Required
         return null;
     }
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws DBAppException {
 
         //testing Table class creation
         String strTableName = "Student";
-        DBApp dbApp = new DBApp( );
+        DBApp dbApp = new DBApp();
 
-        Hashtable htblColNameType = new Hashtable( );
+        Hashtable htblColNameType = new Hashtable();
         htblColNameType.put("id", "java.lang.Integer");
         htblColNameType.put("name", "java.lang.String");
         htblColNameType.put("gpa", "java.lang.Double");
 
-        Hashtable htblColNameMin = new Hashtable( );
+        Hashtable htblColNameMin = new Hashtable();
         htblColNameMin.put("id", "0");
         htblColNameMin.put("name", "A");
         htblColNameMin.put("gpa", "0.0");
 
-        Hashtable htblColNameMax = new Hashtable( );
+        Hashtable htblColNameMax = new Hashtable();
         htblColNameMax.put("id", "1000000000");
-        htblColNameMax.put("name","ZZZZZZZZZZZ");
+        htblColNameMax.put("name", "ZZZZZZZZZZZ");
         htblColNameMax.put("gpa", "4.0");
 
 
-
-        dbApp.createTable( strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax );
+        dbApp.createTable(strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax);
 
 /*        // count time
         long startTime = System.currentTimeMillis();
@@ -154,154 +151,164 @@ public class DBApp {
         dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
             put("id", 2);
             put("name", "AAAAA");
-            put("gpa", 0.34);
+//            put("gpa", 0.34);
         }});
         dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
             put("id", 3);
             put("name", "AAAAA");
-            put("gpa", 0.34);
+//            put("gpa", 0.34);
         }});
 
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 5);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 4);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 6);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 12);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 13);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
-
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 0);
-            put("name", "AAAAA");
-            put("gpa", 0.34);
-        }});
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 5);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 4);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 6);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 12);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 13);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
+//
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 0);
+//            put("name", "AAAAA");
+//            put("gpa", 0.34);
+//        }});
 
 
         Table t = Table.loadTable("Student");
         t.showPage(0);
 
-       dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
+        dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
             put("gpa", 0.01);
         }});
-        dbApp.updateTable(strTableName, "12", new Hashtable<String, Object>() {{
-            put("gpa", 3.0);
-            put("name","AAAA");
-        }});
-        dbApp.updateTable(strTableName, "5", new Hashtable<String, Object>() {{
-            put("name","BBBB");
-        }});
-        dbApp.updateTable(strTableName, "0", new Hashtable<String, Object>() {{
-            put("name","CCCC");
-            put("gpa", 2.0);
-        }});
+//        dbApp.updateTable(strTableName, "12", new Hashtable<String, Object>() {{
+//            put("gpa", 3.0);
+//            put("name","AAAA");
+//        }});
+//        dbApp.updateTable(strTableName, "5", new Hashtable<String, Object>() {{
+//            put("name","BBBB");
+//        }});
+//        dbApp.updateTable(strTableName, "0", new Hashtable<String, Object>() {{
+//            put("name","CCCC");
+//            put("gpa", 2.0);
+//        }});
 
         t.showPage(0);
         t.deleteTable();
-        clearCSV();
+        //clearCSV();
 
     }
 
-    public static boolean isValidForDeletion(String strTableName, Hashtable<String,Object> htblColNameValue) throws IOException, CsvException, DBAppException {
+    public static boolean isValidForDeletion(String strTableName, Hashtable<String, Object> htblColNameValue) throws  DBAppException {
+
         //declaring csv reader
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        try {
+            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
 
-        //check if table exists
-        String[] line;
-        while ((line = reader.readNext()) != null) {
-            if (line[0].equals(strTableName)) {
+            //check if table exists
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals(strTableName)) {
 
-                //check that column names and types are valid
-                for (String key : htblColNameValue.keySet()) {
+                    //check that column names and types are valid
+                    for (String key : htblColNameValue.keySet()) {
 
-                    //look in metadata file for column name
-                    boolean found = false;
-                    for (String[] line2 : reader.readAll()) {
-                        //reminder:
-                        //line2[0] = table name
-                        //line2[1] = column name
-                        //line2[2] = column type
+                        //look in metadata file for column name
+                        boolean found = false;
+                        for (String[] line2 : reader.readAll()) {
+                            //reminder:
+                            //line2[0] = table name
+                            //line2[1] = column name
+                            //line2[2] = column type
 
-                        if (line2[0].equals(strTableName) && line2[1].equals(key)) {
-                            found = true;
+                            if (line2[0].equals(strTableName) && line2[1].equals(key)) {
+                                found = true;
 
-                            //check that column type is valid
-                            //since the column exists in metadata file we are sure the column type should
-                            //be one of the following: java.lang.Integer, java.lang.String, java.lang.Double
-                            if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
-                                throw new DBAppException("Invalid column type for deletion");
+                                //check that column type is valid
+                                //since the column exists in metadata file we are sure the column type should
+                                //be one of the following: java.lang.Integer, java.lang.String, java.lang.Double
+                                if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
+                                    throw new DBAppException("Invalid column type for deletion");
+                                }
+                                break;
                             }
-                            break;
+                        }
+
+                        if (!found) {
+                            throw new DBAppException("Invalid column name for deletion");
                         }
                     }
 
-                    if (!found) {
-                        throw new DBAppException("Invalid column name for deletion");
-                    }
+                    //can delete from table
+                    return true;
                 }
-
-                //can delete from table
-                return true;
             }
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
         throw new DBAppException("Table does not exist");
     }
 
-    public static boolean isExistingTable(String strTableName) throws IOException, CsvValidationException {
+    public static boolean isExistingTable(String strTableName) throws DBAppException {
         //declaring csv reader
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-
-        //check if table exists
-        String[] line;
-        while ((line = reader.readNext()) != null) {
-            if (line[0].equals(strTableName)) {
-                return true;
+        try {
+            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals(strTableName)) {
+                    return true;
+                }
             }
+            return false;
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
-        return false;
     }
 
     /*
      * remove all the data in the CSV file
      */
-    public static void clearCSV() throws IOException, CsvException {
+    public static void clearCSV() throws DBAppException {
+        try {
+            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            List<String[]> allElements = reader.readAll();
+            List<String[]> removeElements = new LinkedList<>();
+            int size = allElements.size();
 
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
-        List<String[]> allElements = reader.readAll();
-        List<String[]> removeElements = new LinkedList<>();
-        int size = allElements.size();
+            for (int i = 1; i < size; i++) {
+                removeElements.add(allElements.get(i));
+            }
+            allElements.removeAll(removeElements);
 
-        for (int i = 1; i < size; i++)  {
-            removeElements.add(allElements.get(i));
+            FileWriter sw = new FileWriter("src/main/java/metadata.csv");
+            CSVWriter writer = new CSVWriter(sw);
+            writer.writeAll(allElements);
+            writer.close();
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
-        allElements.removeAll(removeElements);
 
-        FileWriter sw = new FileWriter("src/main/java/metadata.csv");
-        CSVWriter writer = new CSVWriter(sw);
-        writer.writeAll(allElements);
-        writer.close();
+
     }
-
-
 }

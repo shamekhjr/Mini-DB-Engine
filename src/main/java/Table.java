@@ -5,10 +5,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Locale;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 
@@ -27,7 +24,7 @@ public class Table implements java.io.Serializable {
 
     public Table(String strTableName, String strClusteringKeyColumn,
                  Hashtable<String,String> htblColNameType, Hashtable<String,String> htblColNameMin,
-                 Hashtable<String,String> htblColNameMax ) throws IOException, DBAppException, CsvValidationException {
+                 Hashtable<String,String> htblColNameMax ) throws DBAppException {
 
         //initializing instance vars
         this.sTableName = strTableName;
@@ -62,32 +59,35 @@ public class Table implements java.io.Serializable {
 
 
         //declaring the metadata file and setting it to append mode
-        CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/metadata.csv", true));
+        try {
+            CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/metadata.csv", true));
+            //add new line to metadata file
+            String[] startAtNewLine = new String[1];
+            writer.writeNext(startAtNewLine);
 
-        //add new line to metadata file
-        String[] startAtNewLine = new String[1];
-        writer.writeNext(startAtNewLine);
-
-        //filling the metadata file. The order of the columns is:
-        //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
-        String[] metadata = new String[8];
-        for (String col: htblColNameType.keySet()) {
-            cslsColNames.add(col);
-            metadata[0] = strTableName;
-            metadata[1] = col;
-            metadata[2] = htblColNameType.get(col);
-            metadata[3] = (col.equals(strClusteringKeyColumn)) ? "True" : "False";
-            metadata[4] = "null"; //IndexName will be null for now
-            metadata[5] = "null"; //IndexType will be null for now
-            metadata[6] = htblColNameMin.get(col);
-            metadata[7] = htblColNameMax.get(col);
-            writer.writeNext(metadata);
+            //filling the metadata file. The order of the columns is:
+            //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
+            String[] metadata = new String[8];
+            for (String col: htblColNameType.keySet()) {
+                cslsColNames.add(col);
+                metadata[0] = strTableName;
+                metadata[1] = col;
+                metadata[2] = htblColNameType.get(col);
+                metadata[3] = (col.equals(strClusteringKeyColumn)) ? "True" : "False";
+                metadata[4] = "null"; //IndexName will be null for now
+                metadata[5] = "null"; //IndexType will be null for now
+                metadata[6] = htblColNameMin.get(col);
+                metadata[7] = htblColNameMax.get(col);
+                writer.writeNext(metadata);
+            }
+            writer.close();
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
-        writer.close();
 
     }
 
-    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws IOException, CsvValidationException, DBAppException {
+    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws DBAppException {
         /* NOTES:
             - check for input (size and datatypes), (Note: date acceptable format is "YYYY-MM-DD")
             - don't insert more than N (consult DBApp.config)
@@ -206,7 +206,7 @@ public class Table implements java.io.Serializable {
         iNumOfRows++;
     }
 
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) {
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
 
         //TODO
         //1- search for all relevant records based on conditions (DONE)
@@ -218,7 +218,7 @@ public class Table implements java.io.Serializable {
 
         //delete table if the input is empty
         if (htblColNameValue.isEmpty()) {
-            deleteTable(strTableName);
+            deleteTable();
             return;
         }
 
@@ -271,7 +271,7 @@ public class Table implements java.io.Serializable {
         //if page is empty, delete page
         for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
             if (vNumberOfRowsPerPage.get(i) == 0) {
-                File f = new File("src/main/resources/data/" + strTableName + "/" + sClusteringKey + "/" + i + ".class");
+                File f = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+i+".class");
                 f.delete();
                 vNumberOfRowsPerPage.remove(i);
                 vecMinMaxOfPagesForClusteringKey.remove(i);
@@ -310,7 +310,7 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void updateTable(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException, CsvValidationException, IOException, ParseException {
+    public void updateTable(String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException {
         /* 2 cases:
             1- updating a value of the cluster key --> No update of key (Check Piazza).
             2- updating a values not related to the cluster key
@@ -324,9 +324,21 @@ public class Table implements java.io.Serializable {
         */
 
         // Recall: we update one row *only*
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        CSVReader reader;
+        try {
+            reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+
         String[] line;
-        SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
+        SimpleDateFormat formatter;
+        try {
+            formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+
         Hashtable<String, Object> hCondition = new Hashtable<String, Object>();
 
 
@@ -342,61 +354,65 @@ public class Table implements java.io.Serializable {
             }
         }
 
-        while ((line = reader.readNext()) != null) {
-            // Process each line of the CSV file
-            // Note: Did not use the method (checkValidityOfData) as the update query does not need to update every column in the table. Hence, I added the condition (htblColNameValue.get(line[1]) != null)
-            if (line[0].equals(sTableName) && htblColNameValue.get(line[1]) != null) {
+        try {
+            while ((line = reader.readNext()) != null) {
+                // Process each line of the CSV file
+                // Note: Did not use the method (checkValidityOfData) as the update query does not need to update every column in the table. Hence, I added the condition (htblColNameValue.get(line[1]) != null)
+                if (line[0].equals(sTableName) && htblColNameValue.get(line[1]) != null) {
 
-                // Check for data type
-                if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
-                    throw new DBAppException("Invalid data type for column " + line[1]);
-                }
-
-                // Check for min and max
-                if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
-                        || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
-                    throw new DBAppException("Value for column " + line[1] + " is out of range");
-                }
-
-                // Check if date in input is in the correct format "YYYY-MM-DD"
-                if (line[2].equals("java.util.Date")) {
-                    String[] date = ((String) htblColNameValue.get(line[1])).split("-");
-                    if (date.length != 3) {
-                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    // Check for data type
+                    if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
+                        throw new DBAppException("Invalid data type for column " + line[1]);
                     }
-                    if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
-                        throw new DBAppException("Invalid date format for column " + line[1]);
+
+                    // Check for min and max
+                    if (castAndCompare(htblColNameValue.get(line[1]), line[6]) < 0
+                            || castAndCompare(htblColNameValue.get(line[1]), line[7]) > 0) {
+                        throw new DBAppException("Value for column " + line[1] + " is out of range");
+                    }
+
+                    // Check if date in input is in the correct format "YYYY-MM-DD"
+                    if (line[2].equals("java.util.Date")) {
+                        String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                        if (date.length != 3) {
+                            throw new DBAppException("Invalid date format for column " + line[1]);
+                        }
+                        if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
+                            throw new DBAppException("Invalid date format for column " + line[1]);
+                        }
+                    }
+                }
+
+                // Insert the Clustering key inside the htblColNameValue to help me do the search later.
+                // Note: I already checked that the Hash table (htblColNameValue) does not contain a key for the Clustering key.
+                if (line[0].equals(sTableName) && line[1].equals(sClusteringKey) && Boolean.parseBoolean(line[3])) {
+                    if (line[2].equals("java.util.Date")) {
+                        Date date = formatter.parse(strClusteringKeyValue);
+                        hCondition.put(sClusteringKey, date);
+                    }
+
+                    if (line[2].equals("java.lang.Integer")) {
+                        Integer i = Integer.parseInt(strClusteringKeyValue);
+                        hCondition.put(sClusteringKey, i);
+                    }
+
+                    if (line[2].equals("java.lang.String")) {
+                        String s = strClusteringKeyValue;
+                        hCondition.put(sClusteringKey, s);
+                    }
+
+                    if (line[2].equals("java.lang.Double")) {
+                        Double d = Double.parseDouble(strClusteringKeyValue);
+                        hCondition.put(sClusteringKey, d);
                     }
                 }
             }
-
-            // Insert the Clustering key inside the htblColNameValue to help me do the search later.
-            // Note: I already checked that the Hash table (htblColNameValue) does not contain a key for the Clustering key.
-            if (line[0].equals(sTableName) && line[1].equals(sClusteringKey) && Boolean.parseBoolean(line[3])) {
-                if (line[2].equals("java.util.Date")) {
-                    Date date = formatter.parse(strClusteringKeyValue);
-                    hCondition.put(sClusteringKey, date);
-                }
-
-                if (line[2].equals("java.lang.Integer")) {
-                    Integer i = Integer.parseInt(strClusteringKeyValue);
-                    hCondition.put(sClusteringKey, i);
-                }
-
-                if (line[2].equals("java.lang.String"))  {
-                    String s = strClusteringKeyValue;
-                    hCondition.put(sClusteringKey, s);
-                }
-
-                if (line[2].equals("java.lang.Double")) {
-                    Double d = Double.parseDouble(strClusteringKeyValue);
-                    hCondition.put(sClusteringKey, d);
-                }
-            }
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
 
         // Step 1: Search for the page that contain the Clustering key value.
-        Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> v = this.searchRecords(hCondition);
+        Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> v = this.searchRecords(hCondition);
 
         // If the user tried to update a record with invalid primary key
         System.out.println(v.size());
@@ -404,7 +420,7 @@ public class Table implements java.io.Serializable {
             throw new DBAppException("Primary Key does not exists");
         }
 
-        for (Pair<Pair<Integer,Integer>,Hashtable<String,Object>> pair : v) {
+        for (Pair<Pair<Integer, Integer>, Hashtable<String, Object>> pair : v) {
             int pageNum = pair.val1.val1;
             int recordIndex = pair.val1.val2;
 
@@ -413,8 +429,7 @@ public class Table implements java.io.Serializable {
             Hashtable<String, Object> hTemp = targetPage.vRecords.get(recordIndex);
 
             // Step 3: Update the record
-            for (String key : htblColNameValue.keySet())
-            {
+            for (String key : htblColNameValue.keySet()) {
                 hTemp.put(key, htblColNameValue.get(key));
             }
 
@@ -428,27 +443,53 @@ public class Table implements java.io.Serializable {
     }
 
     // Note: this method is not used in the project, not required
-    public void deleteTable() {
-        File myObj = new File(this.sTableName + ".class");
+    public void deleteTable() throws DBAppException {
+        File myObj = new File("src/main/resources/"+this.sTableName+"/"+this.sTableName+".class");
         myObj.delete();
         for (int i = 0; i < iNumOfPages; i++) {
             Page tmpPage = new Page (sTableName, sClusteringKey, i, false);
             tmpPage.deletePage();
         }
-    }
-
-    public void deleteTable(String sTableName) {
-        File myObj = new File(sTableName + ".class");
+        myObj = new File("src/main/resources/"+this.sTableName);
         myObj.delete();
-        for (int i = 0; i < iNumOfPages; i++) {
-            Page tmpPage = new Page (sTableName, sClusteringKey, i, false);
-            tmpPage.deletePage();
-        }
-    }
 
-    public void serializeTable() {
+        // delete from metadata the rows of this table
         try {
-            FileOutputStream fos = new FileOutputStream(sTableName+".class");
+            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            List<String[]> allElements = reader.readAll();
+            List<String[]> removeElements = new LinkedList<>();
+            int size = allElements.size();
+
+            for (int i = 1; i < size; i++) {
+                if (allElements.get(i)[0].equals(sTableName))
+                    removeElements.add(allElements.get(i));
+            }
+            allElements.removeAll(removeElements);
+
+            FileWriter sw = new FileWriter("src/main/java/metadata.csv");
+            CSVWriter writer = new CSVWriter(sw);
+            writer.writeAll(allElements);
+            writer.close();
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+
+
+    }
+
+
+
+    public void serializeTable() throws DBAppException{
+        try {
+            File folder = new File("src/main/resources/"+this.sTableName);
+
+            if (!folder.exists()) {
+                boolean created = folder.mkdir();
+                if (!created) {
+                    throw new DBAppException("Could not create directory");
+                }
+            }
+            FileOutputStream fos = new FileOutputStream("src/main/resources/"+this.sTableName+"/"+sTableName+".class");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
             oos.close();
@@ -535,17 +576,17 @@ public class Table implements java.io.Serializable {
         return result;
     }
 
-    public static Table loadTable (String sTableName) throws  Exception {
+    public static Table loadTable (String sTableName) throws  DBAppException {
         Table tTable = null;
         try {
-            FileInputStream fis = new FileInputStream(sTableName+".class");
+            FileInputStream fis = new FileInputStream("src/main/resources/"+sTableName+"/"+sTableName+".class");
             ObjectInputStream ois = new ObjectInputStream(fis);
             tTable = (Table) ois.readObject();
             ois.close();
             fis.close();
             return tTable;
         } catch (IOException | ClassNotFoundException e) {
-            throw new Exception(e.getMessage() + " Table: " + sTableName);
+            throw new DBAppException(e);
         }
     }
 
@@ -584,8 +625,14 @@ public class Table implements java.io.Serializable {
         vNumberOfRowsPerPage.add(p.index, p.size());
     }
 
-    public void checkValidityOfData(Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException, CsvValidationException {
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+    public void checkValidityOfData(Hashtable<String, Object> htblColNameValue) throws DBAppException {
+        CSVReader reader;
+        try {
+            reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+
         String[] line;
 
         // check if all columns in input are valid
@@ -606,47 +653,51 @@ public class Table implements java.io.Serializable {
         }
 
         boolean found = false;
-        while ((line = reader.readNext()) != null) {
-            // Process each line of the CSV file
+        try {
+            while ((line = reader.readNext()) != null) {
+                // Process each line of the CSV file
 
-            if (line[0].equals(sTableName)) {
-                found = true;
+                if (line[0].equals(sTableName)) {
+                    found = true;
 
-                // check if column is in input
-                if (!htblColNameValue.containsKey(line[1])) {
-                    continue;
-                }
-
-                if (htblColNameValue.get(line[1]) == null) { // ignore checks for null values
-                    continue;
-                }
-
-                // check for data type
-                if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
-                    throw new DBAppException("Invalid data type for column " + line[1]);
-                }
-
-                // check for min and max
-                if (castAndCompare(htblColNameValue.get(line[1]),line[6]) < 0
-                        || castAndCompare(htblColNameValue.get(line[1]),line[7]) > 0) {
-                    throw new DBAppException("Value for column " + line[1] + " is out of range");
-                }
-
-                // check if date in input is in the correct format "YYYY-MM-DD"
-                if (line[2].equals("java.util.Date")) {
-                    String[] date = ((String) htblColNameValue.get(line[1])).split("-");
-                    if (date.length != 3) {
-                        throw new DBAppException("Invalid date format for column " + line[1]);
+                    // check if column is in input
+                    if (!htblColNameValue.containsKey(line[1])) {
+                        continue;
                     }
-                    if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
-                        throw new DBAppException("Invalid date format for column " + line[1]);
+
+                    if (htblColNameValue.get(line[1]) == null) { // ignore checks for null values
+                        continue;
                     }
+
+                    // check for data type
+                    if (!htblColNameValue.get(line[1]).getClass().getName().equals(line[2])) {
+                        throw new DBAppException("Invalid data type for column " + line[1]);
+                    }
+
+                    // check for min and max
+                    if (castAndCompare(htblColNameValue.get(line[1]), line[6]) < 0
+                            || castAndCompare(htblColNameValue.get(line[1]), line[7]) > 0) {
+                        throw new DBAppException("Value for column " + line[1] + " is out of range");
+                    }
+
+                    // check if date in input is in the correct format "YYYY-MM-DD"
+                    if (line[2].equals("java.util.Date")) {
+                        String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                        if (date.length != 3) {
+                            throw new DBAppException("Invalid date format for column " + line[1]);
+                        }
+                        if (date[0].length() != 4 || date[1].length() != 2 || date[2].length() != 2) {
+                            throw new DBAppException("Invalid date format for column " + line[1]);
+                        }
+                    }
+
+                } else if (found) {
+                    break; // no need to continue searching
                 }
 
-            } else if (found) {
-                break; // no need to continue searching
             }
-
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
     }
 
@@ -662,7 +713,7 @@ public class Table implements java.io.Serializable {
         return true;
     }
 
-    public void showPage(int iPageNum) throws IOException, CsvValidationException {
+    public void showPage(int iPageNum) throws DBAppException {
         Page p = new Page(sTableName, sClusteringKey, iPageNum, true);
         System.out.println("Page " + iPageNum + " has " + p.size() + " records ======");
         int i = 1;

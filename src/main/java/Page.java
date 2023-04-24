@@ -43,7 +43,7 @@ public class Page implements Serializable {
         // load page
         if (load) {
             try {
-                FileInputStream fis = new FileInputStream(this.sTableName + "_page" + index + ".class");
+                FileInputStream fis = new FileInputStream("src/main/resources/"+this.sTableName+"/"+this.sTableName + "_page" + index + ".class");
                 ObjectInputStream ois = new ObjectInputStream(fis);
                 this.vRecords = (Vector<Hashtable<String, Object>>) ois.readObject();
                 ois.close();
@@ -194,7 +194,7 @@ public class Page implements Serializable {
     }
     public void serializePage () {
         try {
-            FileOutputStream fos = new FileOutputStream(this.sTableName+"_page"+ index + ".class");
+            FileOutputStream fos = new FileOutputStream("src/main/resources/"+this.sTableName +"/"+this.sTableName+"_page"+ index + ".class");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(vRecords);
             oos.close();
@@ -224,7 +224,7 @@ public class Page implements Serializable {
     }
 
     public void deletePage() {
-        File myObj = new File(this.sTableName+"_page"+ index + ".class");
+        File myObj = new File("src/main/resources/"+this.sTableName+"/"+this.sTableName+"_page"+ index + ".class");
         myObj.delete();
 
         // encourage the garbage collector to free the memory
