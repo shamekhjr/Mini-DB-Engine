@@ -63,7 +63,7 @@ public class DBApp {
             tTable.updateTable(strClusteringKeyValue, htblColNameValue);
             tTable.serializeTable();
         } catch (Exception e) { // if table does not exist or some error happened
-            throw new DBAppException(e.getMessage());
+            throw new DBAppException(e);
         }
     }
 
