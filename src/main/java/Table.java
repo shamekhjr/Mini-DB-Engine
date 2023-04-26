@@ -215,10 +215,14 @@ public class Table implements java.io.Serializable {
         //4- inter-vector shiftation (not needed anymore)
         //5- re-serialize and save pages (do in dbapp.java) (DONE)
 
+        int deletedRecords = 0;
+
 
         //delete table if the input is empty
         if (htblColNameValue.isEmpty()) {
             deleteTable();
+            //output to user
+            System.out.println("Table " + strTableName + " deleted successfully");
             return;
         }
 
@@ -255,6 +259,7 @@ public class Table implements java.io.Serializable {
 
             //remove the record
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
+            deletedRecords++;
 
             //remove primary key
             cslsClusterValues.remove(htblColNameValue.get(sClusteringKey));
@@ -267,6 +272,9 @@ public class Table implements java.io.Serializable {
             updatePageMeta(pPageToLoad);
 
         }
+
+        //output to user that the records have been deleted
+        System.out.println(deletedRecords + " records from "+this.sTableName+ " table deleted successfully");
 
         //if page is empty, delete page
         for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
@@ -315,6 +323,8 @@ public class Table implements java.io.Serializable {
         //if table is empty, delete entire table
         if (iNumOfRows == 0) {
             deleteTable();
+            //output to user
+            System.out.println("Table " + strTableName + " deleted because it is empty");
             return;
         }
 
@@ -325,7 +335,7 @@ public class Table implements java.io.Serializable {
         }
 
         //serialize table
-        serializeTable();
+        ///serializeTable(); not needed since it is done in the DBApp class
 
     }
 
