@@ -231,7 +231,7 @@ public class Table implements java.io.Serializable {
         Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
 
         //TODO: DELETE TABLE IF INPUT IS EMPTY (DONE)
-        //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES
+        //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES (DONE)
         //TODO: SERIALIZE THE PAGES AFTER DELETION
         //TODO: FIX PAGE NAMES WHEN LOADING/DELETING (path name and file name notation)
 
@@ -277,12 +277,24 @@ public class Table implements java.io.Serializable {
                 vecMinMaxOfPagesForClusteringKey.remove(i);
                 hPageFullStatus.remove(i);
                 iNumOfPages--;
+
+                //loading the page object and then getting rid of it
+                Page p = new Page(strTableName, sClusteringKey, i, true);
+                p.deletePage();
+
                 i--;
+
+                //rename pages after deleting (not efficient cuz O(n^2) but it works)
+                //changing index of page in page object along with name in .class file
+                //not sure if it is i or i+1
+                for (int j = i+1; j < vNumberOfRowsPerPage.size(); j++) {
+                    File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+j+".class");
+                    f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+(j-1)+".class"));
+                    Page pToBeRenamed = new Page(strTableName, sClusteringKey, j, true);
+                    pToBeRenamed.index = j-1;
+                }
             }
         }
-
-        //TODO:need to handle deleting page if empty
-        //TODO:need to handle deleting table if empty
 
         //inter-vector shiftation (not needed anymore)
 //        for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
