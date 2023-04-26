@@ -232,7 +232,7 @@ public class Table implements java.io.Serializable {
 
         //TODO: DELETE TABLE IF INPUT IS EMPTY (DONE)
         //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES (DONE)
-        //TODO: SERIALIZE THE PAGES AFTER DELETION
+        //TODO: SERIALIZE THE PAGES AFTER DELETION (DONE)
         //TODO: FIX PAGE NAMES WHEN LOADING/DELETING (path name and file name notation)
 
 //        int iNumOfPages; D
@@ -314,11 +314,18 @@ public class Table implements java.io.Serializable {
 
         //if table is empty, delete entire table
         if (iNumOfRows == 0) {
-            File f = new File("src/main/java/data/" + strTableName);
-            f.delete();
-            // call garbage collector
-            System.gc();
+            deleteTable();
+            return;
         }
+
+        //serialize pages after deletion
+        for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
+            Page p = new Page(strTableName, sClusteringKey, i, true);
+            p.serializePage();
+        }
+
+        //serialize table
+        serializeTable();
 
     }
 
@@ -485,6 +492,8 @@ public class Table implements java.io.Serializable {
         } catch (Exception e) {
             throw new DBAppException(e);
         }
+
+        System.gc();
 
 
     }
