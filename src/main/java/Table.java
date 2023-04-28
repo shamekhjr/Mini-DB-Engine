@@ -230,14 +230,14 @@ public class Table implements java.io.Serializable {
         //first integer is pageNumber
         //second integer is recordIndex
         Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> vRelevantRecords = searchRecords(htblColNameValue);
+        if (vRelevantRecords.isEmpty()) {
+            //output to user
+            System.out.println("Deleted 0 records from table " + strTableName);
+            return;
+        }
 
         //init hashtable of pages to keep stuff in memory
         Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
-
-        //TODO: DELETE TABLE IF INPUT IS EMPTY (DONE)
-        //TODO: RENAME PAGES IF YOU DELETE EMPTY PAGES (DONE)
-        //TODO: SERIALIZE THE PAGES AFTER DELETION (DONE)
-        //TODO: FIX PAGE NAMES WHEN LOADING/DELETING (path name and file name notation)
 
 //        int iNumOfPages; D
 //        int iNumOfRows; D
@@ -292,33 +292,43 @@ public class Table implements java.io.Serializable {
         //output to user that the records have been deleted
         System.out.println(deletedRecords + " record(s) from "+this.sTableName+ " table deleted successfully");
 
+        int minIndex = Integer.MAX_VALUE;
+        Vector<Integer> pagesToRename = new Vector<Integer>();
         //if page is empty, delete page
-        for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
+
+        //the j keeps track of the page i am currently on
+        //while the i makes sure i do not get out of bounds
+        for (int i = 0, j = 0; i < vNumberOfRowsPerPage.size(); i++,j++) {
             if (vNumberOfRowsPerPage.get(i) == 0) {
                 //loading the page object and then getting rid of it
                 Page p = new Page(strTableName, sClusteringKey, i, true);
                 p.deletePage();
-
-//                File f = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+i+".class");
-//                f.delete();
                 vNumberOfRowsPerPage.remove(i);
                 vecMinMaxOfPagesForClusteringKey.remove(i);
                 hPageFullStatus.remove(i);
                 iNumOfPages--;
 
-                i--;
+                if (j < minIndex)
+                    minIndex = j;
 
-                //rename pages after deleting (not efficient cuz O(n^2) but it works)
-                //changing index of page in page object along with name in .class file
-                //not sure if it is i or i+1
-                //TODO OPTIMIZE DIS TO BE DONE AFTER ALL DELETIONS
-//                for (int j = i+1; j < vNumberOfRowsPerPage.size(); j++) {
-//                    File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+j+".class");
-//                    f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+(j-1)+".class"));
-//                    Page pToBeRenamed = new Page(strTableName, sClusteringKey, j, true);
-//                    pToBeRenamed.index = j-1;
-//                }
+                i--;
+            } else {
+                pagesToRename.add(j);
             }
+        }
+
+        //rename pages after deletion
+        int newIndex = minIndex;
+        for (int i = 0; i < pagesToRename.size(); i++) {
+            int oldIndex = pagesToRename.get(i);
+            if (oldIndex > minIndex){
+                File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+oldIndex+".class");
+                f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+newIndex+".class"));
+//                Page pToBeRenamed = new Page(strTableName, sClusteringKey, oldIndex, true);
+//                pToBeRenamed.index = newIndex;
+                newIndex++;
+            }
+
         }
 
         //inter-vector shiftation (not needed anymore)
@@ -337,23 +347,14 @@ public class Table implements java.io.Serializable {
 //
 //        }
 
-        //if table is empty, delete entire table
-        if (iNumOfRows == 0) {
-            deleteTable();
-            //output to user
-            System.out.println("Table " + strTableName + " deleted because it is empty");
-            return;
-        }
-
-//        //TODO: BALABIZO TIME WASTE (LOADING DA WHOLE DB!)+ NO FUNCTIONALITY
-//        //serialize pages after deletion
-//        for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
-//            Page p = new Page(strTableName, sClusteringKey, i, true);
-//            p.serializePage();
+        //TODO: CHECK IF NEEDED
+//        //if table is empty, delete entire table
+//        if (iNumOfRows == 0) {
+//            deleteTable();
+//            //output to user
+//            System.out.println("Table " + strTableName + " deleted because it is empty");
+//            return;
 //        }
-
-        //serialize table
-        ///serializeTable(); not needed since it is done in the DBApp class
 
     }
 
