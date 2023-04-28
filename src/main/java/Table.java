@@ -245,6 +245,11 @@ public class Table implements java.io.Serializable {
 //        ConcurrentSkipListSet<Object> cslsClusterValues; D
 //        Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey; D
 //        Vector<Integer> vNumberOfRowsPerPage; D
+        //TODO
+        // to check if the page changed to efficiently serialize pages after complete deletion of its rows
+        // instead of serializing after each deletion
+        boolean pageChanged = false; // to check if the page changed to efficiently serialize pages after complete deletion of its rows
+        int oldPageNum = -1;
 
         //remove the records in descending order
         for (int i = vRelevantRecords.size() - 1; i >= 0; i--) {
@@ -270,6 +275,7 @@ public class Table implements java.io.Serializable {
 
             //update page meta
             updatePageMeta(pPageToLoad);
+            //TODO SERLIAZE DA BITCH
 
         }
 
@@ -295,6 +301,7 @@ public class Table implements java.io.Serializable {
                 //rename pages after deleting (not efficient cuz O(n^2) but it works)
                 //changing index of page in page object along with name in .class file
                 //not sure if it is i or i+1
+                //TODO OPTIMIZE DIS TO BE DONE AFTER ALL DELETIONS
                 for (int j = i+1; j < vNumberOfRowsPerPage.size(); j++) {
                     File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+j+".class");
                     f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+(j-1)+".class"));
@@ -328,6 +335,7 @@ public class Table implements java.io.Serializable {
             return;
         }
 
+        //TODO: BALABIZO TIME WASTE (LOADING DA WHOLE DB!)+ NO FUNCTIONALITY
         //serialize pages after deletion
         for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
             Page p = new Page(strTableName, sClusteringKey, i, true);
@@ -653,7 +661,12 @@ public class Table implements java.io.Serializable {
             vecMinMaxOfPagesForClusteringKey.add(new rangePair<>(oMinClusterVal, oMaxClusterVal));
         }
         hPageFullStatus.put(p.index, p.isFull());
-        vNumberOfRowsPerPage.add(p.index, p.size());
+        if (vNumberOfRowsPerPage.size() > p.index) { // if the page index already exists in the vNumberOfRowsPerPage then we only need to update its value
+            vNumberOfRowsPerPage.set(p.index, p.size());
+        }
+        else {
+            vNumberOfRowsPerPage.add(p.index, p.size());
+        }
     }
 
     public void checkValidityOfData(Hashtable<String, Object> htblColNameValue) throws DBAppException {

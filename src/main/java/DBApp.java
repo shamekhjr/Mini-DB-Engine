@@ -202,6 +202,10 @@ public class DBApp {
         dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
             put("gpa", 0.01);
         }});
+
+        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+            put("id", 2);
+        }});
 //        dbApp.updateTable(strTableName, "12", new Hashtable<String, Object>() {{
 //            put("gpa", 3.0);
 //            put("name","AAAA");
@@ -215,7 +219,7 @@ public class DBApp {
 //        }});
 
         t.showPage(0);
-        t.deleteTable();
+        //t.deleteTable();
         //clearCSV();
 
     }
