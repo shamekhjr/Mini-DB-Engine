@@ -464,7 +464,8 @@ public class Table implements java.io.Serializable {
         // If the user tried to update a record with invalid primary key
         System.out.println(v.size());
         if (v.isEmpty()) {
-            throw new DBAppException("Primary Key does not exists");
+//            throw new DBAppException("Primary Key does not exists");
+            return;
         }
 
         for (Pair<Pair<Integer, Integer>, Hashtable<String, Object>> pair : v) {
