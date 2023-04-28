@@ -239,13 +239,7 @@ public class Table implements java.io.Serializable {
         //init hashtable of pages to keep stuff in memory
         Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
 
-//        int iNumOfPages; D
-//        int iNumOfRows; D
-//        Hashtable<Integer, Boolean> hPageFullStatus; D
-//        ConcurrentSkipListSet<Object> cslsClusterValues; D
-//        Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey; D
-//        Vector<Integer> vNumberOfRowsPerPage; D
-        boolean pageChanged = false; // to check if the page changed to efficiently serialize pages after complete deletion of its rows
+
         int oldPageNum = -1;
         Page pPageToLoad = null;
         //remove the records in descending order
@@ -330,22 +324,6 @@ public class Table implements java.io.Serializable {
             }
 
         }
-
-        //inter-vector shiftation (not needed anymore)
-//        for (int k = vRelevantRecords.get(0).val1.val1; k < this.iNumOfPages; k++) {
-//
-//            //check if page is not full
-//            //if it is not full, i know i should get values from next non-empty pages and insert
-//            if(!hPageFullStatus.get(k)) {
-//                for (int j = k + 1; j < this.iNumOfPages; j++) {
-//
-//                    if (vNumberOfRowsPerPage.get(j) > 0) {
-//                        //we need to remove records from this page and put them in page k
-//                    }
-//                }
-//            }
-//
-//        }
 
         //TODO: CHECK IF NEEDED
 //        //if table is empty, delete entire table
