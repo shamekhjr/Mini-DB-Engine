@@ -245,12 +245,9 @@ public class Table implements java.io.Serializable {
 //        ConcurrentSkipListSet<Object> cslsClusterValues; D
 //        Vector<rangePair<Serializable, Serializable>> vecMinMaxOfPagesForClusteringKey; D
 //        Vector<Integer> vNumberOfRowsPerPage; D
-        //TODO
-        // to check if the page changed to efficiently serialize pages after complete deletion of its rows
-        // instead of serializing after each deletion
         boolean pageChanged = false; // to check if the page changed to efficiently serialize pages after complete deletion of its rows
         int oldPageNum = -1;
-
+        Page pPageToLoad = null;
         //remove the records in descending order
         for (int i = vRelevantRecords.size() - 1; i >= 0; i--) {
 
@@ -258,9 +255,22 @@ public class Table implements java.io.Serializable {
             int iPageToLoad = vRelevantRecords.get(i).val1.val1;
             int iRecordIndexInPage = vRelevantRecords.get(i).val1.val2;
 
-            //load the page
-            Page pPageToLoad = new Page(strTableName, sClusteringKey, iPageToLoad, true);
-            htblPagesTemp.put(iPageToLoad, pPageToLoad);
+            if (oldPageNum == -1) { //this is the first iteration
+
+                oldPageNum = iPageToLoad;
+
+                //load the page
+                pPageToLoad = new Page(sTableName, sClusteringKey, iPageToLoad, true);
+
+            } else if (oldPageNum != iPageToLoad) {
+                pPageToLoad.serializePage();
+
+                //load the new page
+                pPageToLoad = new Page(sTableName, sClusteringKey, iPageToLoad, true);
+                oldPageNum = iPageToLoad;
+
+            }
+
 
             //remove the record
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
@@ -273,28 +283,28 @@ public class Table implements java.io.Serializable {
             this.vNumberOfRowsPerPage.set(iPageToLoad, vNumberOfRowsPerPage.get(iPageToLoad) - 1);
             iNumOfRows--;
 
-            //update page meta
-            updatePageMeta(pPageToLoad);
-            //TODO SERLIAZE DA BITCH
-
+            //update page meta (in case page is still not empty)
+            if (!pPageToLoad.vRecords.isEmpty())
+                updatePageMeta(pPageToLoad);
         }
+        pPageToLoad.serializePage();
 
         //output to user that the records have been deleted
-        System.out.println(deletedRecords + " records from "+this.sTableName+ " table deleted successfully");
+        System.out.println(deletedRecords + " record(s) from "+this.sTableName+ " table deleted successfully");
 
         //if page is empty, delete page
         for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
             if (vNumberOfRowsPerPage.get(i) == 0) {
-                File f = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+i+".class");
-                f.delete();
+                //loading the page object and then getting rid of it
+                Page p = new Page(strTableName, sClusteringKey, i, true);
+                p.deletePage();
+
+//                File f = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+i+".class");
+//                f.delete();
                 vNumberOfRowsPerPage.remove(i);
                 vecMinMaxOfPagesForClusteringKey.remove(i);
                 hPageFullStatus.remove(i);
                 iNumOfPages--;
-
-                //loading the page object and then getting rid of it
-                Page p = new Page(strTableName, sClusteringKey, i, true);
-                p.deletePage();
 
                 i--;
 
@@ -302,12 +312,12 @@ public class Table implements java.io.Serializable {
                 //changing index of page in page object along with name in .class file
                 //not sure if it is i or i+1
                 //TODO OPTIMIZE DIS TO BE DONE AFTER ALL DELETIONS
-                for (int j = i+1; j < vNumberOfRowsPerPage.size(); j++) {
-                    File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+j+".class");
-                    f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+(j-1)+".class"));
-                    Page pToBeRenamed = new Page(strTableName, sClusteringKey, j, true);
-                    pToBeRenamed.index = j-1;
-                }
+//                for (int j = i+1; j < vNumberOfRowsPerPage.size(); j++) {
+//                    File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+j+".class");
+//                    f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+(j-1)+".class"));
+//                    Page pToBeRenamed = new Page(strTableName, sClusteringKey, j, true);
+//                    pToBeRenamed.index = j-1;
+//                }
             }
         }
 
@@ -335,12 +345,12 @@ public class Table implements java.io.Serializable {
             return;
         }
 
-        //TODO: BALABIZO TIME WASTE (LOADING DA WHOLE DB!)+ NO FUNCTIONALITY
-        //serialize pages after deletion
-        for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
-            Page p = new Page(strTableName, sClusteringKey, i, true);
-            p.serializePage();
-        }
+//        //TODO: BALABIZO TIME WASTE (LOADING DA WHOLE DB!)+ NO FUNCTIONALITY
+//        //serialize pages after deletion
+//        for (int i = 0; i < vNumberOfRowsPerPage.size(); i++) {
+//            Page p = new Page(strTableName, sClusteringKey, i, true);
+//            p.serializePage();
+//        }
 
         //serialize table
         ///serializeTable(); not needed since it is done in the DBApp class

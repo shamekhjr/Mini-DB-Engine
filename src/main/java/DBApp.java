@@ -5,6 +5,7 @@ import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class DBApp {
     public void init() {
@@ -131,9 +132,9 @@ public class DBApp {
 
         dbApp.createTable(strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax);
 
-/*        // count time
+        // count time
         long startTime = System.currentTimeMillis();
-        for (int i = 400; i >= 1; i--) {
+        for (int i = 300; i >= 1; i--) {
             int finalI = i;
             dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
                 put("id", finalI);
@@ -145,19 +146,29 @@ public class DBApp {
         long endTime = System.currentTimeMillis();
         System.out.println("Took " + ((endTime - startTime)/1000)/60 + " minutes");
 
-        Table t = Table.loadTable("Student");
-        t.showPage(0);*/
+        for (int i = 200; i >= 100; i--) {
+            int finalI = i;
+            dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+                put("id", finalI);
+                put("name", "n" + finalI);
+                put("gpa", 0.9);
+            }});
+            System.out.println("deleted " + i);
+        }
 
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 2);
-            put("name", "AAAAA");
-//            put("gpa", 0.34);
-        }});
-        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 3);
-            put("name", "AAAAA");
-//            put("gpa", 0.34);
-        }});
+        //Table t = Table.loadTable("Student");
+        //t.showPage(0);
+
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 2);
+//            put("name", "AAAAA");
+////            put("gpa", 0.34);
+//        }});
+//        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 3);
+//            put("name", "AAAAA");
+////            put("gpa", 0.34);
+//        }});
 
 //        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
 //            put("id", 5);
@@ -199,13 +210,13 @@ public class DBApp {
         Table t = Table.loadTable("Student");
         t.showPage(0);
 
-        dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
-            put("gpa", 0.01);
-        }});
-
-        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
-            put("id", 2);
-        }});
+//        dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
+//            put("gpa", 0.01);
+//        }});
+//
+//        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+//            put("id", 2);
+//        }});
 //        dbApp.updateTable(strTableName, "12", new Hashtable<String, Object>() {{
 //            put("gpa", 3.0);
 //            put("name","AAAA");
@@ -230,48 +241,43 @@ public class DBApp {
         try {
             CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
 
+            Hashtable<String,String> htblColNameTypeTemp = new Hashtable<String,String>();
+
             //check if table exists
             String[] line;
+            boolean found = false;
             while ((line = reader.readNext()) != null) {
                 if (line[0].equals(strTableName)) {
-
-                    //check that column names and types are valid
-                    for (String key : htblColNameValue.keySet()) {
-
-                        //look in metadata file for column name
-                        boolean found = false;
-                        for (String[] line2 : reader.readAll()) {
-                            //reminder:
-                            //line2[0] = table name
-                            //line2[1] = column name
-                            //line2[2] = column type
-
-                            if (line2[0].equals(strTableName) && line2[1].equals(key)) {
-                                found = true;
-
-                                //check that column type is valid
-                                //since the column exists in metadata file we are sure the column type should
-                                //be one of the following: java.lang.Integer, java.lang.String, java.lang.Double
-                                if (!line2[2].equals(htblColNameValue.get(key).getClass().getName())) {
-                                    throw new DBAppException("Invalid column type for deletion");
-                                }
-                                break;
-                            }
-                        }
-
-                        if (!found) {
-                            throw new DBAppException("Invalid column name for deletion");
-                        }
-                    }
-
-                    //can delete from table
-                    return true;
+                    htblColNameTypeTemp.put(line[1], line[2]);
                 }
             }
+
+            if (htblColNameTypeTemp.isEmpty()) {
+                throw new DBAppException("Table does not exist");
+            }
+
+            //check that column names and types are valid
+            for (String key : htblColNameValue.keySet()) {
+
+                if (htblColNameTypeTemp.containsKey(key)) {
+                    found = true;
+
+                    //check that column type is valid
+                    //since the column exists in metadata file we are sure the column type should
+                    //be one of the following: java.lang.Integer, java.lang.String, java.lang.Double
+                    if (!htblColNameTypeTemp.get(key).equals(htblColNameValue.get(key).getClass().getName())) {
+                        throw new DBAppException("Invalid column type for deletion");
+                    }
+
+                } else {
+                    throw new DBAppException("Invalid column name for deletion");
+                }
+            }
+            return true;
+
         } catch (Exception e) {
             throw new DBAppException(e);
         }
-        throw new DBAppException("Table does not exist");
     }
 
     public static boolean isExistingTable(String strTableName) throws DBAppException {
