@@ -134,11 +134,11 @@ public class DBApp {
 
         // count time
         long startTime = System.currentTimeMillis();
-        for (int i = 400; i >= 1; i--) {
+        for (int i = 500; i >= 1; i--) {
             int finalI = i;
             dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
                 put("id", finalI);
-                put("name", (finalI >= 100 && finalI <= 200) ? "n1" : (finalI >= 300 && finalI <= 400) ? "n2" : "n" + finalI);
+                put("name", (finalI >= 100 && finalI <= 200) ? "n1" : (finalI >= 300 && finalI <= 400) ? "n2" : "n3");
                 put("gpa", 0.9);
             }});
             System.out.println("inserted " + i);
