@@ -134,11 +134,11 @@ public class DBApp {
 
         // count time
         long startTime = System.currentTimeMillis();
-        for (int i = 300; i >= 1; i--) {
+        for (int i = 400; i >= 1; i--) {
             int finalI = i;
             dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
                 put("id", finalI);
-                put("name", "n" + finalI);
+                put("name", (finalI >= 100 && finalI <= 200) ? "n1" : (finalI >= 300 && finalI <= 400) ? "n2" : "n" + finalI);
                 put("gpa", 0.9);
             }});
             System.out.println("inserted " + i);
@@ -146,15 +146,23 @@ public class DBApp {
         long endTime = System.currentTimeMillis();
         System.out.println("Took " + ((endTime - startTime)/1000)/60 + " minutes");
 
-        for (int i = 200; i >= 100; i--) {
-            int finalI = i;
-            dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
-                put("id", finalI);
-                put("name", "n" + finalI);
-                put("gpa", 0.9);
+        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+                put("name", "n1");
             }});
-            System.out.println("deleted " + i);
-        }
+
+        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+            put("name", "n2");
+        }});
+
+//        for (int i = 200; i >= 100; i--) {
+//            int finalI = i;
+//            dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+//                put("id", finalI);
+//                put("name", "n" + finalI);
+//                put("gpa", 0.9);
+//            }});
+//            System.out.println("deleted " + i);
+//        }
 
         //Table t = Table.loadTable("Student");
         //t.showPage(0);

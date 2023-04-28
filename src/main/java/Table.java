@@ -277,7 +277,7 @@ public class Table implements java.io.Serializable {
             deletedRecords++;
 
             //remove primary key
-            cslsClusterValues.remove(htblColNameValue.get(sClusteringKey));
+            cslsClusterValues.remove(vRelevantRecords.get(i).val2.get(sClusteringKey));
 
             //decrement number of rows in the page
             this.vNumberOfRowsPerPage.set(iPageToLoad, vNumberOfRowsPerPage.get(iPageToLoad) - 1);
