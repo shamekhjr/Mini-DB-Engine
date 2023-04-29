@@ -60,7 +60,7 @@ public class Table implements java.io.Serializable {
 
         //declaring the metadata file and setting it to append mode
         try {
-            CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/metadata.csv", true));
+            CSVWriter writer = new CSVWriter(new FileWriter("src/main/resources/metadata.csv", true));
             //add new line to metadata file
             String[] startAtNewLine = new String[1];
             writer.writeNext(startAtNewLine);
@@ -141,7 +141,9 @@ public class Table implements java.io.Serializable {
                 }
             }
 
+
             pInsertPage = new Page(sTableName, sClusteringKey, iInsertPageNum, true);
+
 
 
             boolean bIsFull = pInsertPage.isFull();
@@ -316,8 +318,8 @@ public class Table implements java.io.Serializable {
         for (int i = 0; i < pagesToRename.size(); i++) {
             int oldIndex = pagesToRename.get(i);
             if (oldIndex > minIndex){
-                File f2 = new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+oldIndex+".class");
-                f2.renameTo(new File("src/main/resources/"+strTableName+"/"+sTableName+"_page"+newIndex+".class"));
+                File f2 = new File("src/main/resources/data/"+strTableName+"/"+sTableName+"_page"+oldIndex+".class");
+                f2.renameTo(new File("src/main/resources/data/"+strTableName+"/"+sTableName+"_page"+newIndex+".class"));
 //                Page pToBeRenamed = new Page(strTableName, sClusteringKey, oldIndex, true);
 //                pToBeRenamed.index = newIndex;
                 newIndex++;
@@ -352,7 +354,7 @@ public class Table implements java.io.Serializable {
         // Recall: we update one row *only*
         CSVReader reader;
         try {
-            reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
         } catch (Exception e) {
             throw new DBAppException(e);
         }
@@ -399,7 +401,10 @@ public class Table implements java.io.Serializable {
 
                     // Check if date in input is in the correct format "YYYY-MM-DD"
                     if (line[2].equals("java.util.Date")) {
-                        String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String dateString = sdf.format(htblColNameValue.get(line[1]));
+                        String[] date = dateString.split("-");
+                        //System.out.println(date);
                         if (date.length != 3) {
                             throw new DBAppException("Invalid date format for column " + line[1]);
                         }
@@ -441,7 +446,7 @@ public class Table implements java.io.Serializable {
         Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> v = this.searchRecords(hCondition);
 
         // If the user tried to update a record with invalid primary key
-        System.out.println(v.size());
+        //System.out.println(v.size());
         if (v.isEmpty()) {
 //            throw new DBAppException("Primary Key does not exists");
             return;
@@ -471,18 +476,18 @@ public class Table implements java.io.Serializable {
 
     // Note: this method is not used in the project, not required
     public void deleteTable() throws DBAppException {
-        File myObj = new File("src/main/resources/"+this.sTableName+"/"+this.sTableName+".class");
+        File myObj = new File("src/main/resources/data/"+this.sTableName+"/"+this.sTableName+".class");
         myObj.delete();
         for (int i = 0; i < iNumOfPages; i++) {
             Page tmpPage = new Page (sTableName, sClusteringKey, i, false);
             tmpPage.deletePage();
         }
-        myObj = new File("src/main/resources/"+this.sTableName);
+        myObj = new File("src/main/resources/data/"+this.sTableName);
         myObj.delete();
 
         // delete from metadata the rows of this table
         try {
-            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
             List<String[]> allElements = reader.readAll();
             List<String[]> removeElements = new LinkedList<>();
             int size = allElements.size();
@@ -493,7 +498,7 @@ public class Table implements java.io.Serializable {
             }
             allElements.removeAll(removeElements);
 
-            FileWriter sw = new FileWriter("src/main/java/metadata.csv");
+            FileWriter sw = new FileWriter("src/main/resources/metadata.csv");
             CSVWriter writer = new CSVWriter(sw);
             writer.writeAll(allElements);
             writer.close();
@@ -510,7 +515,7 @@ public class Table implements java.io.Serializable {
 
     public void serializeTable() throws DBAppException{
         try {
-            File folder = new File("src/main/resources/"+this.sTableName);
+            File folder = new File("src/main/resources/data/"+this.sTableName);
 
             if (!folder.exists()) {
                 boolean created = folder.mkdir();
@@ -518,7 +523,7 @@ public class Table implements java.io.Serializable {
                     throw new DBAppException("Could not create directory");
                 }
             }
-            FileOutputStream fos = new FileOutputStream("src/main/resources/"+this.sTableName+"/"+sTableName+".class");
+            FileOutputStream fos = new FileOutputStream("src/main/resources/data/"+this.sTableName+"/"+sTableName+".class");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
             oos.close();
@@ -608,7 +613,7 @@ public class Table implements java.io.Serializable {
     public static Table loadTable (String sTableName) throws  DBAppException {
         Table tTable = null;
         try {
-            FileInputStream fis = new FileInputStream("src/main/resources/"+sTableName+"/"+sTableName+".class");
+            FileInputStream fis = new FileInputStream("src/main/resources/data/"+sTableName+"/"+sTableName+".class");
             ObjectInputStream ois = new ObjectInputStream(fis);
             tTable = (Table) ois.readObject();
             ois.close();
@@ -619,7 +624,7 @@ public class Table implements java.io.Serializable {
         }
     }
 
-    public static int castAndCompare(Object input, String csv) {
+    public static int castAndCompare(Object input, String csv) throws DBAppException {
         Class<?> clazz = input.getClass();
         int result = 0;
         if (clazz == Double.class) {
@@ -629,12 +634,17 @@ public class Table implements java.io.Serializable {
             Integer d = Integer.parseInt(csv);
             result = ((Integer) input).compareTo(d);
         } else if (clazz == Date.class) {
-            long d = Date.parse(csv);
-            long input_date = ((Date) input).getTime();
-            result = Long.compare(input_date, d);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date d = null;
+            try {
+                d = sdf.parse(csv);
+            } catch (ParseException e) {
+                throw new DBAppException(e);
+            }
+            result = ((Date) input).compareTo(d);
         } else if (clazz == String.class) {
             String input_string = (String) input;
-            result = input_string.length()-csv.length();
+            result = input_string.toLowerCase().compareTo(csv.toLowerCase());
         }
         return result;
 
@@ -662,7 +672,7 @@ public class Table implements java.io.Serializable {
     public void checkValidityOfData(Hashtable<String, Object> htblColNameValue) throws DBAppException {
         CSVReader reader;
         try {
-            reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
         } catch (Exception e) {
             throw new DBAppException(e);
         }
@@ -716,7 +726,10 @@ public class Table implements java.io.Serializable {
 
                     // check if date in input is in the correct format "YYYY-MM-DD"
                     if (line[2].equals("java.util.Date")) {
-                        String[] date = ((String) htblColNameValue.get(line[1])).split("-");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String dateString = sdf.format(htblColNameValue.get(line[1]));
+                        String[] date = dateString.split("-");
+                        //System.out.println(date);
                         if (date.length != 3) {
                             throw new DBAppException("Invalid date format for column " + line[1]);
                         }
