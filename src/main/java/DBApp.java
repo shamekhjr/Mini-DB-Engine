@@ -247,7 +247,7 @@ public class DBApp {
 
         //declaring csv reader
         try {
-            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
 
             Hashtable<String,String> htblColNameTypeTemp = new Hashtable<String,String>();
 
@@ -291,7 +291,7 @@ public class DBApp {
     public static boolean isExistingTable(String strTableName) throws DBAppException {
         //declaring csv reader
         try {
-            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
             String[] line;
             while ((line = reader.readNext()) != null) {
                 if (line[0].equals(strTableName)) {
@@ -309,7 +309,7 @@ public class DBApp {
      */
     public static void clearCSV() throws DBAppException {
         try {
-            CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
             List<String[]> allElements = reader.readAll();
             List<String[]> removeElements = new LinkedList<>();
             int size = allElements.size();
@@ -319,7 +319,7 @@ public class DBApp {
             }
             allElements.removeAll(removeElements);
 
-            FileWriter sw = new FileWriter("src/main/java/metadata.csv");
+            FileWriter sw = new FileWriter("src/main/resources/metadata.csv");
             CSVWriter writer = new CSVWriter(sw);
             writer.writeAll(allElements);
             writer.close();
