@@ -27,7 +27,7 @@ public class Table implements java.io.Serializable {
                  Hashtable<String,String> htblColNameMax ) throws DBAppException {
 
         //initializing instance vars
-        this.sTableName = strTableName;
+        this.sTableName = strTableName.toLowerCase();
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
@@ -69,15 +69,18 @@ public class Table implements java.io.Serializable {
             //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
             String[] metadata = new String[8];
             for (String col: htblColNameType.keySet()) {
-                cslsColNames.add(col);
-                metadata[0] = strTableName;
-                metadata[1] = col;
+                cslsColNames.add(col.toLowerCase());
+                metadata[0] = strTableName.toLowerCase();
+                metadata[1] = col.toLowerCase();
                 metadata[2] = htblColNameType.get(col);
                 metadata[3] = (col.equals(strClusteringKeyColumn)) ? "True" : "False";
                 metadata[4] = "null"; //IndexName will be null for now
                 metadata[5] = "null"; //IndexType will be null for now
                 metadata[6] = htblColNameMin.get(col);
                 metadata[7] = htblColNameMax.get(col);
+                if (castAndCompare(metadata[6], metadata[7]) > 0) {
+                    throw new DBAppException("Minimum value of column " + col + " is greater than its maximum value");
+                }
                 writer.writeNext(metadata);
             }
             writer.close();
@@ -359,6 +362,8 @@ public class Table implements java.io.Serializable {
             throw new DBAppException(e);
         }
 
+
+
         String[] line;
         SimpleDateFormat formatter;
         try {
@@ -429,6 +434,9 @@ public class Table implements java.io.Serializable {
 
                     if (line[2].equals("java.lang.String")) {
                         String s = strClusteringKeyValue;
+//                        if (!cslsClusterValues.contains(s)) {
+//                            throw new DBAppException("Can not update at the clustering key: " + sClusteringKey);
+//                        }
                         hCondition.put(sClusteringKey, s);
                     }
 
