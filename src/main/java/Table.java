@@ -27,7 +27,7 @@ public class Table implements java.io.Serializable {
                  Hashtable<String,String> htblColNameMax ) throws DBAppException {
 
         //initializing instance vars
-        this.sTableName = strTableName.toLowerCase();
+        this.sTableName = strTableName;
         this.iNumOfPages = 0;
         this.iNumOfRows = 0;
         this.hPageFullStatus = new Hashtable<>();
@@ -47,6 +47,16 @@ public class Table implements java.io.Serializable {
         if (htblColNameType.size() != htblColNameMin.size() ||
                 htblColNameType.size() != htblColNameMax.size()) {
             throw new DBAppException("Number of Columns does not match their given properties");
+        }
+
+        //check if some col names in all htbls
+        ConcurrentSkipListSet<String> cols = new ConcurrentSkipListSet<>();
+        cols.addAll(htblColNameType.keySet());
+        cols.addAll(htblColNameMax.keySet());
+        cols.addAll(htblColNameMin.keySet());
+
+        if (cols.size() != htblColNameType.size()) {
+            throw new DBAppException("Column names are not consistent");
         }
 
         //making sure column data types are valid
@@ -69,9 +79,9 @@ public class Table implements java.io.Serializable {
             //Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType, min, max
             String[] metadata = new String[8];
             for (String col: htblColNameType.keySet()) {
-                cslsColNames.add(col.toLowerCase());
-                metadata[0] = strTableName.toLowerCase();
-                metadata[1] = col.toLowerCase();
+                cslsColNames.add(col);
+                metadata[0] = strTableName;
+                metadata[1] = col;
                 metadata[2] = htblColNameType.get(col);
                 metadata[3] = (col.equals(strClusteringKeyColumn)) ? "True" : "False";
                 metadata[4] = "null"; //IndexName will be null for now
