@@ -544,6 +544,9 @@ public class Table implements java.io.Serializable {
     // chad search; serves selectFromTable, deleteFromTable (supplies the records and their locations: page, index)
     public Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchRecords(Hashtable<String,Object> hCondition) {
         Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> result = new Vector<>(); // page, index, record
+        if (iNumOfPages == 0) {
+            return result;
+        }
 
         // Check approach: Cluster Key present ? Binary Search : Linear search
         if (hCondition.keySet().contains(sClusteringKey)) { // binary search
