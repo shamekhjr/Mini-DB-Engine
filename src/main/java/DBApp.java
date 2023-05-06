@@ -1,17 +1,11 @@
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvException;
-import com.opencsv.exceptions.CsvValidationException;
-
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class DBApp {
     public void init() {
-        //very bri'ish amirit
-        //ya m8
-        //stop tolkin
 
     }
 
@@ -96,8 +90,27 @@ public class DBApp {
     }
 
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
+        //TODO add input validation (colNames, object types, range check, etc.)
 
-        return null;
+        // check for correct number of operators
+        if (arrSQLTerms.length - 1 != strarrOperators.length) {
+            throw new DBAppException("Invalid number of operators");
+        }
+
+        try {
+            // load the table from hard disk
+            Table tTable = Table.loadTable(arrSQLTerms[0]._strTableName);
+
+            // add all search results to the vector
+            Vector<Hashtable<String, Object>> result = new Vector<>();
+            result = tTable.selectFromTable(arrSQLTerms, strarrOperators);
+
+            // return the vector as an iterator
+            return result.iterator();
+
+        } catch (Exception e) { // if table does not exist or some error happened
+            throw new DBAppException(e);
+        }
     }
 
     //bonus
@@ -144,7 +157,7 @@ public class DBApp {
             System.out.println("inserted " + i);
         }
         long endTime = System.currentTimeMillis();
-        System.out.println("Took " + ((endTime - startTime)/1000)/60 + " minutes");
+        System.out.println("Took " + ((endTime - startTime)/1000) + " seconds");
 
         dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
                 put("name", "n1");

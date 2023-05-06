@@ -49,7 +49,7 @@ public class Table implements java.io.Serializable {
             throw new DBAppException("Number of Columns does not match their given properties");
         }
 
-        //check if some col names in all htbls
+        //check if same col names in all htbls
         ConcurrentSkipListSet<String> cols = new ConcurrentSkipListSet<>();
         cols.addAll(htblColNameType.keySet());
         cols.addAll(htblColNameMax.keySet());
@@ -629,6 +629,74 @@ public class Table implements java.io.Serializable {
         }
 
         return result;
+    }
+
+    public Vector<Hashtable<String, Object>> selectFromTable(SQLTerm[] queries, String[] operations) throws DBAppException {
+        Vector<Hashtable<String, Object>> result = new Vector<>();
+        // TODO search for compatible index
+        if (true) { // if a compatible one found
+            // load from disk
+
+            // search for
+        } else { // load all pages and perform operation
+            for (int i = 0; i < iNumOfPages; i++) {
+                // load (de-serialize the page)
+                Page pCurrentPage = new Page(sTableName, sClusteringKey, i, true);
+
+                int index = 0;
+                // for each record in page perform boolean operation vector
+                Vector<Boolean> operationVector = new Vector<>();
+                for (Hashtable<String, Object> ht : pCurrentPage.vRecords) {
+                    // get the boolean value of each query
+                    for (SQLTerm query : queries) {
+                        operationVector.add(operate(query._strOperator, ht.get(query._strColumnName), query._objValue));
+                    }
+
+                    // evaluate the boolean vector from left to right
+                    for (String operator: operations) {
+                        boolean b1 = operationVector.remove(0);
+                        boolean b2 = operationVector.remove(0);
+                        switch (operator.toUpperCase()) {
+                            case "AND":
+                                operationVector.add(0, b1 && b2);
+                                break;
+                            case "OR":
+                                operationVector.add(0, b1 || b2);
+                                break;
+                            case "XOR":
+                                operationVector.add(0, b1 ^ b2);
+                                break;
+                        }
+                    }
+
+                    if (operationVector.get(0)) { // sql expression evaluated to true with current row
+                        result.add(ht);
+                    }
+                }
+
+                pCurrentPage = null;
+                System.gc();
+            }
+        }
+        return result;
+    }
+
+    public boolean operate(String operation, Object o1, Object o2) throws DBAppException {
+        switch(operation) {
+            case "=":
+                return ((Comparable)o1).compareTo(o2) == 0;
+            case ">":
+                return ((Comparable)o1).compareTo(o2) > 0;
+            case ">=":
+                return ((Comparable)o1).compareTo(o2) >= 0;
+            case "<":
+                return ((Comparable)o1).compareTo(o2) < 0;
+            case "<=":
+                return ((Comparable)o1).compareTo(o2) <= 0;
+            case "!=":
+                return ((Comparable)o1).compareTo(o2) != 0;
+            default: throw new DBAppException("Invalid operator: " + operation);
+        }
     }
 
     public static Table loadTable (String sTableName) throws  DBAppException {
