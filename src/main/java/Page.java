@@ -232,6 +232,53 @@ public class Page implements Serializable {
         myObj = null;
         System.gc();
     }
+
+    public Vector<Pair<Integer,Hashtable<String,Object>>> searchFromPage(Hashtable<String, Object> hCondition) {
+        //this.deserializePage();
+
+        Vector<Pair<Integer, Hashtable<String, Object>>> retVRecords = new Vector<>();
+        int sizeOfPage = vRecords.size();
+
+        // if the search is based on the Clustering Key then for sure their will be only one record
+        // As the Clustering Key is the primary key which contain no duplicate
+        if (hCondition.keySet().contains(sClusteringKey)) { // Binary Search on the Clustering Key (Recall: Clustering key is the Primary key)
+            int left = 0, right = sizeOfPage - 1;
+            int mid = -1;
+            while (left <= right) {
+                mid = left + (right - left) / 2;
+                if (((Comparable) vRecords.get(mid).get(sClusteringKey)).compareTo(((Comparable) hCondition.get(sClusteringKey))) < 0) {
+                    left = mid + 1;
+                } else if (((Comparable) vRecords.get(mid).get(sClusteringKey)).compareTo(((Comparable) hCondition.get(sClusteringKey))) > 0) {
+                    right = mid - 1;
+                } else {
+                    break;
+                }
+            }
+
+            if (left <= right)
+            {
+                Hashtable<String, Object> rhtblColNameValue = vRecords.get(mid);
+                retVRecords.add(new Pair<Integer, Hashtable<String, Object>>(mid,rhtblColNameValue));
+            }
+        }
+        else { // If the search is not based on the clustering key then their could be multiple records as output due to duplicate values in column
+            for (int i = 0; i < sizeOfPage; i++) {
+                Hashtable<String, Object> temphtblColNameValue = vRecords.get(i);
+
+                boolean bAllSatisfied = true;
+                for (String key : temphtblColNameValue.keySet()) { // Problem: Set are not thread safe :(
+                    if (!(temphtblColNameValue.get(key).equals(hCondition.get(key)))) {
+                        bAllSatisfied = false;
+                    }
+                }
+                if (bAllSatisfied) {
+                    retVRecords.add(new Pair<Integer, Hashtable<String, Object>>(i,temphtblColNameValue));
+                }
+            }
+        }
+        this.serializePage();
+        return retVRecords; // Return vector of index so that we can access the records
+    }
 }
 
 
