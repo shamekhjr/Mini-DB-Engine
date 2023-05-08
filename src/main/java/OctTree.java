@@ -41,11 +41,11 @@ public class OctTree implements Serializable {
                     i++;
                 }
         }
-        Entry e = new Entry(colVals[0], colVals[1], colVals[2], page);
+        Point e = new Point(colVals[0], colVals[1], colVals[2], page);
         root.insert(e);
     }
 
-    public Vector<Entry> search(Entry e) {
+    public Vector<Point> search(Point e) {
         // TODO
         return null;
     }

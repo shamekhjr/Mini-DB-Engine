@@ -50,10 +50,10 @@ public class OctTreeNode  implements Serializable {
    }
 
    public boolean delete(Point p) {
-       if (this.wraps(e)) {
-           for (Entry entry: entries) {
-               if (entry.equals(e)) {
-                     entries.remove(entry);
+       if (this.wraps(p)) {
+           for (Point entry: points) {
+               if (entry.equals(p)) {
+                     points.remove(entry);
                }
            }
            return true;
