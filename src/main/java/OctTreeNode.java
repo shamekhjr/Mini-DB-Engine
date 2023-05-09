@@ -9,7 +9,7 @@ public class OctTreeNode  implements Serializable {
     String[][] colNamesDatatypes;
     public Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn;
     public int maxEntries;
-    boolean isLeaf;
+    boolean isLeaf; //TODO ALWAYS UPDATE THIS
 
    public OctTreeNode(String[][] colNamesDatatypes, Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn, int maxEntries) {
         this.colNamesDatatypes = colNamesDatatypes;

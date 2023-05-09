@@ -2,23 +2,22 @@ import java.io.Serializable;
 import java.util.Vector;
 
 public class Point implements Serializable {
-    Comparable col1;
-    Comparable col2;
-    Comparable col3;
+    Comparable[] cols;
     int reference; // page num only
     Vector<Point> duplicates;
-    Object pkValue; // useful when updating
+    Comparable pkValue; // useful when updating
 
-    public Point(Comparable col1, Comparable col2, Comparable col3, int reference) {
-        this.col1 = col1;
-        this.col2 = col2;
-        this.col3 = col3;
+    public Point(Comparable col1, Comparable col2, Comparable col3, int reference, Comparable pkValue) {
+        this.cols[0] = col1;
+        this.cols[1] = col2;
+        this.cols[2] = col3;
         this.reference = reference;
         this.duplicates = new Vector<>();
+        this.pkValue = pkValue;
     }
 
     public boolean equals(Object o) {
         Point e = (Point) o;
-        return this.col1.equals(e.col1) && this.col2.equals(e.col2) && this.col3.equals(e.col3);
+        return this.cols[0].equals(e.cols[0]) && this.cols[1].equals(e.cols[1]) && this.cols[2].equals(e.cols[2]);
     }
 }

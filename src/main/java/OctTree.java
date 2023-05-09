@@ -1,6 +1,5 @@
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,7 +13,7 @@ public class OctTree implements Serializable {
     String sTableName;
     String sIndexName;
 
-    public OctTree(String sIndexName, String col1Name, String col2Name, String col3Name, String sTableName) throws DBAppException {
+    public OctTree(String sIndexName, String col1Name, String col2Name, String col3Name, String sTableName, boolean onPrimaryKey) throws DBAppException {
         this.maxEntries = loadMaxEntries();
         this.sIndexName = sIndexName;
         this.colNamesDatatypes = new String[3][2];
@@ -28,6 +27,7 @@ public class OctTree implements Serializable {
         } catch (Exception e) {
             throw new DBAppException(e);
         }
+        this.onPrimaryKey = onPrimaryKey;
         // TODO update metadata
     }
 
@@ -135,7 +135,7 @@ public class OctTree implements Serializable {
         return hMinMaxPerColumn;
     }
 
-    public void insert(Hashtable<String, Object> record, int page) throws DBAppException { // finds the not full wrapping node and inserts
+    public void insert(Hashtable<String, Object> record, int page, String sClusteringKey) throws DBAppException { // finds the not full wrapping node and inserts
         Comparable[] colVals = new Comparable[3];
         for (int i = 0; i < colNamesDatatypes.length; i++) {
             if (record.get(colNamesDatatypes[i][0]).getClass().equals(Null.class))
@@ -144,7 +144,7 @@ public class OctTree implements Serializable {
                 colVals[i] = (Comparable) record.get(colNamesDatatypes[i][0]);
             }
         }
-        Point e = new Point(colVals[0], colVals[1], colVals[2], page);
+        Point e = new Point(colVals[0], colVals[1], colVals[2], page, (Comparable) record.get(sClusteringKey));
         root.insert(e);
     }
 
@@ -152,4 +152,77 @@ public class OctTree implements Serializable {
         // TODO
         return null;
     }
+
+    // helper for searching on the index if it indexes the pk
+    public Point getPointByPkAndUpdate(String pkColName, Comparable pk, Hashtable<String, Object> htblColNameValue) {
+        if (!onPrimaryKey)
+            return null;
+
+        // search for the leaf nodes that wrap the pk
+        Vector<OctTreeNode> relevantNodes = root.searchOneColumn(new Pair<>(pkColName, pk));
+        Point point = null;
+        // for each relevant record
+        for (OctTreeNode node : relevantNodes) {
+            boolean brk = false;
+            // check on each entry in a node
+            Vector<Point> entries = node.points;
+            for (Point entry : entries) {
+                // compare pk with current points' pk
+                if (entry.pkValue.equals(pk)) {
+                    point = entry;
+                    break;
+                }
+
+                // check in duplicates of entries
+                for (Point duplicate : entry.duplicates) {
+                    if (duplicate.pkValue.equals(pk)) {
+                        point = duplicate;
+                        brk = true;
+                        break;
+                    }
+                }
+
+                if (brk) break;
+            }
+        }
+        if (point != null) { // update the point
+            for (int i = 0; i < colNamesDatatypes.length; i++) {
+                if (htblColNameValue.containsKey(colNamesDatatypes[i][0])) {
+                    point.cols[i] = (Comparable) htblColNameValue.get(colNamesDatatypes[i][0]);
+                }
+            }
+            return point;
+        }
+        return null; // not found
+    }
+
+    // used when updating only without having to search for the point [index not on pk]
+    public void updateIndex(String pkColName, Comparable pkValue, Hashtable<String, Object> htblColNameValue) {
+        // check if cols updated are indexed
+        boolean anyColUpdatedIsIndexed = false;
+        for (int i = 0; i < colNamesDatatypes.length; i++) {
+            if (htblColNameValue.containsKey(colNamesDatatypes[i][0])) {
+                anyColUpdatedIsIndexed = true;
+                break;
+            }
+        }
+
+        if (!anyColUpdatedIsIndexed)
+            return; // no indexed cols updated
+
+        // search for the leaf node that contains the pk
+
+
+
+    }
+
+
+    // used to get the page and update the index [if index is on pk]
+    public int getPageByPkAndUpdate(String pkColName, Comparable pkValue, Hashtable<String, Object> htblColNameValue) {
+        Point p = getPointByPkAndUpdate(pkColName, pkValue, htblColNameValue);
+        if (p == null)
+            return -1; //not found
+        return p.reference;
+    }
+
 }

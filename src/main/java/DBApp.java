@@ -113,6 +113,22 @@ public class DBApp {
         }
     }
 
+    // following method creates an octree
+    // depending on the count of column names passed.
+    // If three column names are passed, create an octree.
+    // If only one or two column names is passed, throw an Exception.
+    public void createIndex(String strTableName, String[] strarrColName) throws DBAppException {
+        //TODO add input validation (colNames, object types, range check, etc.)
+
+        // check if the number of columns is correct
+        if (strarrColName.length != 3) {
+            throw new DBAppException("Invalid number of columns");
+        }
+
+
+
+    }
+
     //bonus
     public Iterator parseSQL(StringBuffer strbufSQL) throws DBAppException {
 

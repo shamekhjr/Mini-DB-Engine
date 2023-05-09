@@ -373,7 +373,6 @@ public class Table implements java.io.Serializable {
         }
 
 
-
         String[] line;
         SimpleDateFormat formatter;
         try {
@@ -460,31 +459,38 @@ public class Table implements java.io.Serializable {
             throw new DBAppException(e);
         }
 
-        // Step 1: Search for the page that contain the Clustering key value.
-        Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> v = this.searchRecords(hCondition);
+        // TODO check for index usage
+        boolean applicableIndex = false;
+        if (applicableIndex) {
+            // update using index
+        } else {
 
-        // If the user tried to update a record with invalid primary key
-        //System.out.println(v.size());
-        if (v.isEmpty()) {
+            // Step 1: Search for the page that contain the Clustering key value.
+            Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> v = this.searchRecords(hCondition);
+
+            // If the user tried to update a record with invalid primary key
+            //System.out.println(v.size());
+            if (v.isEmpty()) {
 //            throw new DBAppException("Primary Key does not exists");
-            return;
-        }
-
-        for (Pair<Pair<Integer, Integer>, Hashtable<String, Object>> pair : v) {
-            int pageNum = pair.val1.val1;
-            int recordIndex = pair.val1.val2;
-
-            // Step 2: Deserialize the page at index [pageNum]
-            Page targetPage = new Page(sTableName, sClusteringKey, pageNum, true);
-            Hashtable<String, Object> hTemp = targetPage.vRecords.get(recordIndex);
-
-            // Step 3: Update the record
-            for (String key : htblColNameValue.keySet()) {
-                hTemp.put(key, htblColNameValue.get(key));
+                return;
             }
 
-            // Step 4: Serialize the page
-            targetPage.serializePage();
+            for (Pair<Pair<Integer, Integer>, Hashtable<String, Object>> pair : v) {
+                int pageNum = pair.val1.val1;
+                int recordIndex = pair.val1.val2;
+
+                // Step 2: Deserialize the page at index [pageNum]
+                Page targetPage = new Page(sTableName, sClusteringKey, pageNum, true);
+                Hashtable<String, Object> hTemp = targetPage.vRecords.get(recordIndex);
+
+                // Step 3: Update the record
+                for (String key : htblColNameValue.keySet()) {
+                    hTemp.put(key, htblColNameValue.get(key));
+                }
+
+                // Step 4: Serialize the page
+                targetPage.serializePage();
+            }
         }
     }
 
