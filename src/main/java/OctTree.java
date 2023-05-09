@@ -137,14 +137,12 @@ public class OctTree implements Serializable {
 
     public void insert(Hashtable<String, Object> record, int page) throws DBAppException { // finds the not full wrapping node and inserts
         Comparable[] colVals = new Comparable[3];
-        int i = 0;
-        for (String col: record.keySet()) {
-                if (record.get(col).getClass().equals(Null.class))
-                    throw new DBAppException("Cannot create index on null values");
-                else {
-                    colVals[i] = (Comparable) record.get(col);
-                    i++;
-                }
+        for (int i = 0; i < colNamesDatatypes.length; i++) {
+            if (record.get(colNamesDatatypes[i][0]).getClass().equals(Null.class))
+                throw new DBAppException("Cannot create index on null values");
+            else {
+                colVals[i] = (Comparable) record.get(colNamesDatatypes[i][0]);
+            }
         }
         Point e = new Point(colVals[0], colVals[1], colVals[2], page);
         root.insert(e);
