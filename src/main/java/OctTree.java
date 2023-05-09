@@ -23,7 +23,7 @@ public class OctTree implements Serializable {
         colNamesDatatypes[2][0] = col3Name;
         this.sTableName = sTableName;
         try {
-            Hashtable<String, Pair<Comparable, Comparable>> htblMinMax = rootMinMax();
+            Hashtable<String, Pair<Comparable, Comparable>> htblMinMax = rootMinMax(sTableName);
             root = new OctTreeNode(colNamesDatatypes, htblMinMax, maxEntries);
         } catch (Exception e) {
             throw new DBAppException(e);
@@ -44,14 +44,14 @@ public class OctTree implements Serializable {
         return Integer.parseInt(configProperties.getProperty("MaximumEntriesinOctreeNode"));
     }
 
-    public Hashtable<String, Pair<Comparable, Comparable>> rootMinMax () throws DBAppException, IOException, CsvValidationException, ParseException {
+    public Hashtable<String, Pair<Comparable, Comparable>> rootMinMax (String sTableName) throws DBAppException, IOException, CsvValidationException, ParseException {
         CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
         String[] line;
         SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
-        Hashtable<String, Pair<Object, Object>> hMinMaxPerColumn = new Hashtable<>();
+        Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn = new Hashtable<>();
 
         while ((line = reader.readNext()) != null) {
-            if (line[0].equals()) {
+            if (line[0].equals(sTableName)) {
                 if (line[1].equals(colNamesDatatypes[0][0])) {
                     colNamesDatatypes[0][1] = line[2];
                     if (colNamesDatatypes[0][1].equals("java.lang.Integer")) {
@@ -138,7 +138,7 @@ public class OctTree implements Serializable {
     public void insert(Hashtable<String, Object> record, int page) throws DBAppException { // finds the not full wrapping node and inserts
         Comparable[] colVals = new Comparable[3];
         int i = 0;
-        for (String col: colNames) {
+        for (String col: record.keySet()) {
                 if (record.get(col).getClass().equals(Null.class))
                     throw new DBAppException("Cannot create index on null values");
                 else {
