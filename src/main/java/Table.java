@@ -252,9 +252,6 @@ public class Table implements java.io.Serializable {
             return;
         }
 
-        //init hashtable of pages to keep stuff in memory
-        Hashtable<Integer,Page> htblPagesTemp = new Hashtable<>();
-
 
         int oldPageNum = -1;
         Page pPageToLoad = null;
@@ -285,6 +282,7 @@ public class Table implements java.io.Serializable {
             //remove the record
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
             deletedRecords++;
+            //TODO: load octree and delete that point (requires loading/using loaded instance of OctTree)
 
             //remove primary key
             cslsClusterValues.remove(vRelevantRecords.get(i).val2.get(sClusteringKey));
@@ -304,10 +302,11 @@ public class Table implements java.io.Serializable {
 
         int minIndex = Integer.MAX_VALUE;
         Vector<Integer> pagesToRename = new Vector<Integer>();
+
         //if page is empty, delete page
 
-        //the j keeps track of the page i am currently on
-        //while the i makes sure i do not get out of bounds
+        //the j keeps track of the page I am currently on (the old values)
+        //while the i makes sure I do not get out of bounds while traversing the vector
         for (int i = 0, j = 0; i < vNumberOfRowsPerPage.size(); i++,j++) {
             if (vNumberOfRowsPerPage.get(i) == 0) {
                 //loading the page object and then getting rid of it
@@ -334,6 +333,7 @@ public class Table implements java.io.Serializable {
             if (oldIndex > minIndex){
                 File f2 = new File("src/main/resources/data/"+strTableName+"/"+sTableName+"_page"+oldIndex+".class");
                 f2.renameTo(new File("src/main/resources/data/"+strTableName+"/"+sTableName+"_page"+newIndex+".class"));
+                //TODO: update reference number in index (find any point with reference as the old page and change it to the new page)
 //                Page pToBeRenamed = new Page(strTableName, sClusteringKey, oldIndex, true);
 //                pToBeRenamed.index = newIndex;
                 newIndex++;

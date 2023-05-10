@@ -148,17 +148,28 @@ public class OctTree implements Serializable {
         root.insert(e);
     }
 
+    //deletes one record (point) from the index
+    //we pass in (something)
     public void delete() {
         // TODO
     }
 
     //used to clear a table (delete all records without deleting whole table)
     public void deleteAll() {
+        //remove all points inside of root
         root.points.removeAllElements();
+
+        //get rid of the children once and for all
+        //in a very brute force, barbaric and inelegant way
         for (int i = 0; i < root.children.length; i++) {
             root.children[i] = null;
         }
         System.gc();
+    }
+
+    //will be used in deleteFromTable to find records and update the page numbers
+    public void updateRefNum() {
+        // TODO
     }
 
     public Vector<Point> search(Point e) {
