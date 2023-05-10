@@ -223,21 +223,22 @@ public class Table implements java.io.Serializable {
 
     public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
 
-        //TODO
-        //1- search for all relevant records based on conditions (DONE)
-        //2- remove the records in descending order (akher index fe akher page le awel index fe awel page) (DONE)
-        //3- update minMax (DONE)
-        //4- inter-vector shiftation (not needed anymore)
-        //5- re-serialize and save pages (do in dbapp.java) (DONE)
 
         int deletedRecords = 0;
 
 
         //delete table if the input is empty
         if (htblColNameValue.isEmpty()) {
-            deleteTable();
+            //clear the table (delete all records and pages but do not delete table
+            for (int i = 0; i < iNumOfPages; i++) {
+                Page pPage = new Page(strTableName, sClusteringKey, i, true);
+                pPage.deletePage();
+            }
+            //TODO: call deleteAll() method and delete all records (requires loading OctTree first)
+
+            //deleteTable();
             //output to user
-            System.out.println("Table " + strTableName + " deleted successfully");
+            System.out.println("Table " + strTableName + " cleared successfully");
             return;
         }
 
@@ -339,15 +340,6 @@ public class Table implements java.io.Serializable {
             }
 
         }
-
-        //TODO: CHECK IF NEEDED
-//        //if table is empty, delete entire table
-//        if (iNumOfRows == 0) {
-//            deleteTable();
-//            //output to user
-//            System.out.println("Table " + strTableName + " deleted because it is empty");
-//            return;
-//        }
 
     }
 

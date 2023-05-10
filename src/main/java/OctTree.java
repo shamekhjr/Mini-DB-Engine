@@ -148,6 +148,19 @@ public class OctTree implements Serializable {
         root.insert(e);
     }
 
+    public void delete() {
+        // TODO
+    }
+
+    //used to clear a table (delete all records without deleting whole table)
+    public void deleteAll() {
+        root.points.removeAllElements();
+        for (int i = 0; i < root.children.length; i++) {
+            root.children[i] = null;
+        }
+        System.gc();
+    }
+
     public Vector<Point> search(Point e) {
         // TODO
         return null;
