@@ -1,6 +1,8 @@
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -89,8 +91,119 @@ public class DBApp {
 
     }
 
+    public void validateDataTypeAndRange (SQLTerm term, String dataType, String min, String max) throws DBAppException {
+        Class<?> classType = term._objValue.getClass();
+        if (classType == Integer.class && dataType.equals("java.lang.Integer")) {
+            Integer sqlValue = (Integer)term._objValue;
+            Integer minimum = Integer.parseInt(min);
+            Integer maximum = Integer.parseInt(max);
+            if (sqlValue.compareTo(minimum) < 0 || sqlValue.compareTo(maximum) > 0) {
+                throw new DBAppException("SQLTerm value " + term._objValue + " does not lie within the range of the column " + term._strColumnName);
+            }
+        }
+        else if (classType == String.class && dataType.equals("java.lang.String")) {
+            String sqlValue = (String)term._objValue;
+            if (sqlValue.compareTo(min) < 0 || sqlValue.compareTo(max) > 0) {
+                throw new DBAppException("SQLTerm value " + term._objValue + " does not lie within the range of the column " + term._strColumnName);
+            }
+        }
+        else if (classType == Double.class && dataType.equals("java.lang.Double")) {
+            Double sqlValue = (Double)term._objValue;
+            Double minimum = Double.parseDouble(min);
+            Double maximum = Double.parseDouble(max);
+            if (sqlValue.compareTo(minimum) < 0 || sqlValue.compareTo(maximum) > 0) {
+                throw new DBAppException("SQLTerm value " + term._objValue + " does not lie within the range of the column " + term._strColumnName);
+            }
+        }
+        else if (classType == Date.class && dataType.equals("java.util.Date")) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-DD");
+            boolean condition = false;
+            try {
+                Date minimum = dateFormat.parse(min);
+                Date maximum = dateFormat.parse(max);
+                condition = ((Date)term._objValue).compareTo(minimum) < 0 || ((Date)term._objValue).compareTo(maximum) > 0;
+            }
+            catch (Exception e) {
+                throw new DBAppException("SQLTerm has invalid date format, Given: " + term._objValue + " ,Required Format: YYYY-MM-DD");
+            }
+            if (condition) {
+                throw new DBAppException("SQLTerm value " + term._objValue + " does not lie within the range of the column " + term._strColumnName);
+            }
+        }
+        else {
+            throw new DBAppException("SQLTerm has invalid datatype");
+        }
+    }
+
+    public void validateSQLTerms (SQLTerm[] arrSQLTerms) throws DBAppException {
+        // 1. Check that 3 SQLTerms are on the same table.
+        // Get the Table Name of each SQLTerm
+        String tableName = arrSQLTerms[0]._strTableName;
+        if (!tableName.equals(arrSQLTerms[1]._strTableName) || !tableName.equals(arrSQLTerms[2]._strTableName)) {
+            throw new DBAppException("SQLTerms on multiple tables is not allowed.");
+        }
+
+        // 2. Check that the table name exists in the CSV file. (condition2)
+        // 3. Check that the column exists in the table. (condition3)
+        try {
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
+            String[] line;
+            SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
+            boolean condition2 = false;
+            boolean condition3 = false;
+            boolean condSQlTermColName1 = false;
+            boolean condSQlTermColName2 = false;
+            boolean condSQlTermColName3 = false;
+
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals(tableName)) { // Meet Second Check: Check that the table name exists in the CSV file.
+                    condition2 = true;
+                    // 4. Check that the data type of the SQLTerm is convenient to the column's data type.
+                    // 5. Check that the value of SQLTerm satisfies the column range.
+                    if (line[1].equals(arrSQLTerms[0]._strTableName)) {
+                        condSQlTermColName1 = true;
+                        validateDataTypeAndRange(arrSQLTerms[0], line[2], line[6], line[7]);
+                    }
+                    else if (line[1].equals(arrSQLTerms[1]._strTableName)) {
+                        condSQlTermColName2 = true;
+                        validateDataTypeAndRange(arrSQLTerms[1], line[2], line[6], line[7]);
+                    }
+                    else if (line[1].equals(arrSQLTerms[2]._strTableName)) {
+                        condSQlTermColName3 = true;
+                        validateDataTypeAndRange(arrSQLTerms[1], line[2], line[6], line[7]);
+                    }
+                }
+            }
+          if (condSQlTermColName1 && condSQlTermColName2 && condSQlTermColName3) { // Meet Third Condition: Check that the column exists in the table.
+                condition3 = true;
+            }
+
+          if (!condition2) {
+              throw new DBAppException("Table " + tableName + " does not exist.");
+          }
+
+          if (!condition3) {
+              if (!condSQlTermColName1) {
+                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[0]._strColumnName);
+              }
+              if (!condSQlTermColName2) {
+                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[1]._strColumnName);
+              }
+              if (!condSQlTermColName3) {
+                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[2]._strColumnName);
+              }
+          }
+        }
+        catch (Exception e) {
+            throw new DBAppException(e);
+        }
+    }
+
+
+
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
-        //TODO add input validation (colNames, object types, range check, etc.)
+        // TODO add input validation (colNames, object types, range check, etc.)
+        validateSQLTerms(arrSQLTerms);
 
         // check for correct number of operators
         if (arrSQLTerms.length - 1 != strarrOperators.length) {

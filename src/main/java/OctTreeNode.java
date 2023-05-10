@@ -85,23 +85,7 @@ public class OctTreeNode  implements Serializable {
 
    }
 
-   public  Vector<Integer> search (SQLTerm[] arrSQLTerms) {
-       Vector<Integer> resultPageNumber = new Vector<Integer>();
-       Vector<OctTreeNode> vecResultOctTreeNodes = this.searchHelper(arrSQLTerms);
-       // For each leaf node extracted from the search query.
-       for (OctTreeNode node : vecResultOctTreeNodes) {
-           // For each point in the leaf nodes.
-           for (Point point : node.points) {
-               // Get all page numbers that the point references.
-               for (Integer i : point.references) {
-                   resultPageNumber.add(i);
-               }
-           }
-       }
-       resultPageNumber = eliminateDuplicatePageNumbers(resultPageNumber);
-       return resultPageNumber;
-   }
-
+    // Deprecated
    public Vector<Integer> eliminateDuplicatePageNumbers (Vector<Integer> vecPageNumbers) {
        Vector<Integer> resultPageNumbers = new Vector<>();
        for (Integer i : vecPageNumbers) {
@@ -117,7 +101,7 @@ public class OctTreeNode  implements Serializable {
         "if the 3 columns an octree was created on appear in sql term and they are Anded together, then use octree"
          -- Wael Aboulsaadat
     */
-   public Vector<OctTreeNode> searchHelper (SQLTerm[] arrSQLTerms) {
+   public Vector<OctTreeNode> searchNode (SQLTerm[] arrSQLTerms) {
         if (isLeaf) {
             Vector<OctTreeNode> vecResultOctTreeNode = new Vector<>();
             vecResultOctTreeNode.add(this);
@@ -177,7 +161,7 @@ public class OctTreeNode  implements Serializable {
 
             Vector<OctTreeNode> vecResultOctTreeNodes = new Vector<>();
             for (OctTreeNode next : vecNextOctTreeNode) {
-                Vector<OctTreeNode> vecTmpNodes = next.searchHelper(arrSQLTerms);
+                Vector<OctTreeNode> vecTmpNodes = next.searchNode(arrSQLTerms);
                 for(OctTreeNode OctTreeNode : vecTmpNodes) {
                     vecResultOctTreeNodes.add(OctTreeNode);
                 }

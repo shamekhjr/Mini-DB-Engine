@@ -45,7 +45,7 @@ public class OctTree implements Serializable {
     }
 
     public Hashtable<String, Pair<Comparable, Comparable>> rootMinMax (String sTableName) throws DBAppException, IOException, CsvValidationException, ParseException {
-        CSVReader reader = new CSVReader(new FileReader("src/main/java/metadata.csv"));
+        CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
         String[] line;
         SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
         Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn = new Hashtable<>();
@@ -258,6 +258,27 @@ public class OctTree implements Serializable {
         if (p == null)
             return -1; //not found
         return p.reference;
+    }
+
+    public  Vector<Pair<Integer, Comparable>> search (SQLTerm[] arrSQLTerms) {
+        // TODO CHECKS
+
+
+        // TODO CODE
+        Vector<Pair<Integer, Comparable>> resultPagePK = new Vector<>();
+        Vector<OctTreeNode> vecResultOctTreeNodes = root.searchNode(arrSQLTerms);
+        // For each leaf node extracted from the search query.
+        for (OctTreeNode node : vecResultOctTreeNodes) {
+            // For each point in the leaf nodes.
+            for (Point point : node.points) {
+                // Get all page numbers that the point references.
+                resultPagePK.add(new Pair<>(point.reference, point.pkValue));
+                for (Point p : point.duplicates) {
+                    resultPagePK.add(new Pair<>(p.reference, p.pkValue));
+                }
+            }
+        }
+        return resultPagePK;
     }
 
     public void serializeIndex () {
