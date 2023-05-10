@@ -225,7 +225,26 @@ public class Table implements java.io.Serializable {
 
 
         int deletedRecords = 0;
+        boolean hasIndex = false;
 
+        //check if index has been created on this column
+        try {
+            CSVReader reader = new CSVReader(new FileReader("data/metadata.csv"));
+
+            String[] nextLine;
+            while ((nextLine = reader.readNext()) != null) {
+                if (nextLine[0].equals(strTableName) && !nextLine[4].equals("null")) {
+                    hasIndex = true;
+                    break;
+                }
+            }
+
+        } catch(Exception e) {
+            throw new DBAppException(e);
+        }
+
+        //load the index if it exists (replace the null after the '?')
+        OctTree index = (hasIndex)?null:null;
 
         //delete table if the input is empty
         if (htblColNameValue.isEmpty()) {
@@ -234,7 +253,11 @@ public class Table implements java.io.Serializable {
                 Page pPage = new Page(strTableName, sClusteringKey, i, true);
                 pPage.deletePage();
             }
-            //TODO: call deleteAll() method and delete all records (requires loading OctTree first)
+            if (hasIndex) {
+                //TODO: call deleteAll() method and delete all records (requires loading OctTree first)
+                index.deleteAll();
+            }
+
 
             //deleteTable();
             //output to user
