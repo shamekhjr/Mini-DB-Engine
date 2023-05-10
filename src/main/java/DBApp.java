@@ -160,15 +160,15 @@ public class DBApp {
                     condition2 = true;
                     // 4. Check that the data type of the SQLTerm is convenient to the column's data type.
                     // 5. Check that the value of SQLTerm satisfies the column range.
-                    if (line[1].equals(arrSQLTerms[0]._strTableName)) {
+                    if (line[1].equals(arrSQLTerms[0]._strColumnName)) {
                         condSQlTermColName1 = true;
                         validateDataTypeAndRange(arrSQLTerms[0], line[2], line[6], line[7]);
                     }
-                    else if (line[1].equals(arrSQLTerms[1]._strTableName)) {
+                    else if (line[1].equals(arrSQLTerms[1]._strColumnName)) {
                         condSQlTermColName2 = true;
                         validateDataTypeAndRange(arrSQLTerms[1], line[2], line[6], line[7]);
                     }
-                    else if (line[1].equals(arrSQLTerms[2]._strTableName)) {
+                    else if (line[1].equals(arrSQLTerms[2]._strColumnName)) {
                         condSQlTermColName3 = true;
                         validateDataTypeAndRange(arrSQLTerms[1], line[2], line[6], line[7]);
                     }
