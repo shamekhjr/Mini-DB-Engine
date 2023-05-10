@@ -225,4 +225,18 @@ public class OctTree implements Serializable {
         return p.reference;
     }
 
+    public void serializeIndex () {
+        try {
+            FileOutputStream fos = new FileOutputStream(sIndexName + ".class");
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this);
+            oos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

@@ -3,7 +3,8 @@ import java.util.Vector;
 
 public class Point implements Serializable {
     Comparable[] cols;
-    int reference; // page num only
+    int reference; // page num only // DEPATE
+    Vector<Integer> references = new Vector<>(); // a Point could contain multiple page numbers if there is duplicates
     Vector<Point> duplicates;
     Comparable pkValue; // useful when updating
 
@@ -11,7 +12,8 @@ public class Point implements Serializable {
         this.cols[0] = col1;
         this.cols[1] = col2;
         this.cols[2] = col3;
-        this.reference = reference;
+        reference = reference;
+        references.add(reference);
         this.duplicates = new Vector<>();
         this.pkValue = pkValue;
     }

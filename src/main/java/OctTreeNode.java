@@ -7,7 +7,7 @@ public class OctTreeNode  implements Serializable {
     public Vector<Point> points;
     public OctTreeNode[] children;
     String[][] colNamesDatatypes;
-    public Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn;
+    public Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn; // Hashtable< Column Name, Pair< Minimum, Maximum> >
     public int maxEntries;
     boolean isLeaf; //TODO ALWAYS UPDATE THIS
 
@@ -86,7 +86,108 @@ public class OctTreeNode  implements Serializable {
 
    }
 
-    public Vector<OctTreeNode> search (Hashtable<String, Object> htblColNameValue) {
+   public  Vector<Integer> search (SQLTerm[] arrSQLTerms) {
+       Vector<Integer> resultPageNumber = new Vector<Integer>();
+       Vector<OctTreeNode> vecResultOctTreeNodes = this.searchHelper(arrSQLTerms);
+       // For each leaf node extracted from the search query.
+       for (OctTreeNode node : vecResultOctTreeNodes) {
+           // For each point in the leaf nodes.
+           for (Point point : node.points) {
+               // Get all page numbers that the point references.
+               for (Integer i : point.references) {
+                   resultPageNumber.add(i);
+               }
+           }
+       }
+       resultPageNumber = eliminateDuplicatePageNumbers(resultPageNumber);
+       return resultPageNumber;
+   }
+
+   public Vector<Integer> eliminateDuplicatePageNumbers (Vector<Integer> vecPageNumbers) {
+       Vector<Integer> resultPageNumbers = new Vector<>();
+       for (Integer i : vecPageNumbers) {
+           if (!resultPageNumbers.contains(i)) {
+               resultPageNumbers.add(i);
+           }
+       }
+       return resultPageNumbers;
+   }
+
+   /*
+       Use the Octree search:
+        "if the 3 columns an octree was created on appear in sql term and they are Anded together, then use octree"
+         -- Wael Aboulsaadat
+    */
+   public Vector<OctTreeNode> searchHelper (SQLTerm[] arrSQLTerms) {
+        if (isLeaf) {
+            Vector<OctTreeNode> vecResultOctTreeNode = new Vector<>();
+            vecResultOctTreeNode.add(this);
+            return vecResultOctTreeNode;
+        }
+        else {
+            Vector<OctTreeNode> vecNextOctTreeNode = new Vector<>();
+            // For each SQLTerm, there will be number of children nodes with range that satisfies it.
+            // Initially, we want to traverse all children.
+            boolean[] nextChildren = new boolean[8]; // nextChildren[i] == true -> we are going to traverse the subtree at children[i].
+            for (int i = 0; i < nextChildren.length; i++) {
+                nextChildren[i] = true;
+            }
+
+            for (int i = 0; i < arrSQLTerms.length; i++) {
+                SQLTerm sqlTerm = arrSQLTerms[i];
+                for (int j = 0; j < children.length; j++) {
+                    OctTreeNode current = children[j];
+                    Pair<Comparable, Comparable> minMaxCol = ((Pair<Comparable, Comparable>) (current.hMinMaxPerColumn.get(sqlTerm._strColumnName)));
+                    boolean condition;
+
+                    if (sqlTerm._strOperator.equals("=")) { // Node(Min, Max) = SQLTerm._objValue;
+                        // condition = (Min <= SQLTerm._objValue && Max >= SQLTerm._objValue);
+                        boolean cond1 = ((Comparable) minMaxCol.val1).compareTo((Comparable) (sqlTerm._objValue)) <= 0;
+                        boolean cond2 = ((Comparable) minMaxCol.val2).compareTo((Comparable) (sqlTerm._objValue)) >= 0;
+                        condition = cond1 && cond2;
+                    } else if (sqlTerm._strOperator.equals(">")) { // Node(Max) > SQLTerm._objValue;
+                        // condition = (Max > SQLTerm._objValue);
+                        condition = ((Comparable) minMaxCol.val2).compareTo((Comparable) (sqlTerm._objValue)) > 0;
+                    } else if (sqlTerm._strOperator.equals("<")) { // Node(Min) < SQLTerm._objValue;
+                        // condition = (Min < SQLTerm._objValue);
+                        condition = ((Comparable) minMaxCol.val1).compareTo((Comparable) (sqlTerm._objValue)) < 0;
+                    } else if (sqlTerm._strOperator.equals(">=")) { // Node(Max) >= SQLTerm._objValue;
+                        // condition = (Max >= SQLTerm._objValue);
+                        condition = ((Comparable) minMaxCol.val2).compareTo((Comparable) (sqlTerm._objValue)) >= 0;
+                    } else if (sqlTerm._strOperator.equals("<=")) { // Node(Min) <= SQLTerm._objValue;
+                        // condition = (Min <= SQLTerm._objValue);
+                        condition = ((Comparable) minMaxCol.val1).compareTo((Comparable) (sqlTerm._objValue)) <= 0;
+                    } else { // Node(Max) != SQLTerm._objValue;
+                        // condition = ALWAYS TRUE;
+                        // Note: we check for not equal at the leaf nodes as we need to compare each Point with the SQLTerm.objValue
+                        condition = true;
+                    }
+
+                    // If (the condition to go to the children node is false) then { nextChildren[j] = false }
+                    if (!condition) {
+                        nextChildren[j] = false;
+                    }
+                }
+            }
+
+            for (int i = 0; i < children.length; i++) {
+                if (nextChildren[i]) {
+                    vecNextOctTreeNode.add(children[i]);
+                }
+            }
+
+            Vector<OctTreeNode> vecResultOctTreeNodes = new Vector<>();
+            for (OctTreeNode next : vecNextOctTreeNode) {
+                Vector<OctTreeNode> vecTmpNodes = next.searchHelper(arrSQLTerms);
+                for(OctTreeNode OctTreeNode : vecTmpNodes) {
+                    vecResultOctTreeNodes.add(OctTreeNode);
+                }
+            }
+            return vecResultOctTreeNodes;
+        }
+   }
+
+    public Vector<OctTreeNode> searchExactQueries (Hashtable<String, Object> htblColNameValue) {
         Comparable valColumn1 =  (Comparable) htblColNameValue.get(colNamesDatatypes[0][0]);
         Comparable valColumn2 =  (Comparable) htblColNameValue.get(colNamesDatatypes[1][0]);
         Comparable valColumn3 =  (Comparable) htblColNameValue.get(colNamesDatatypes[2][0]);
@@ -105,7 +206,7 @@ public class OctTreeNode  implements Serializable {
                 return searchTwoColumns(new Pair(colNamesDatatypes[0][0], valColumn1), new Pair(colNamesDatatypes[1][0], valColumn2));
             }
         }
-        else if (htblColNameValue.size() ==1) {
+        else if (htblColNameValue.size() == 1) {
             if (valColumn1 != null) {
                 return searchOneColumn(new Pair(colNamesDatatypes[0][0], valColumn1));
             }
@@ -185,6 +286,7 @@ public class OctTreeNode  implements Serializable {
             return vecResultOctTreeNodes;
         }
     }
+
     /*
     If OctTreeNode is a leaf:
        1. Return the current OctTreeNode in a vector
