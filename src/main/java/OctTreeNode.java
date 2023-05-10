@@ -48,7 +48,6 @@ public class OctTreeNode  implements Serializable {
                } else if (points.size() < maxEntries) { // check if space
                    points.add(p);
                } else {
-                   // create children
                    // TODO
                    subdivide();
                    distribute();
@@ -319,6 +318,35 @@ public class OctTreeNode  implements Serializable {
                 }
             }
             return vecResultOctTreeNodes;
+        }
+    }
+
+    public Point searchPkAttributeAndDelete(Comparable pk) {
+        if (isLeaf) {
+            for (int i = 0; i < points.size(); i++) {
+                if (points.get(i).pkValue.compareTo(pk) == 0) {
+                    Point p = points.remove(i);
+                    return p;
+                }
+
+                for (int j = 0; j < points.get(i).duplicates.size(); j++) {
+                    if (points.get(i).duplicates.get(j).pkValue.compareTo(pk) == 0) {
+                        Point p = points.get(i).duplicates.remove(j);
+                        return p;
+                    }
+                }
+            }
+            return null;
+        }
+        else {
+            for (int i = 0; i < children.length; i++) {
+                OctTreeNode current = children[i];
+                Point res =  current.searchPkAttributeAndDelete(pk);
+                if (res != null) {
+                    return res;
+                }
+            }
+            return null;
         }
     }
 }

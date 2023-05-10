@@ -190,14 +190,16 @@ public class OctTree implements Serializable {
             boolean brk = false;
             // check on each entry in a node
             Vector<Point> entries = node.points;
-            for (Point entry : entries) {
+            for (int i = 0; i < entries.size(); i++) {
+                Point entry = entries.get(i);
                 // compare pk with current points' pk
                 if (entry.pkValue.equals(pk)) {
-                    point = entry;
+                    point = entries.remove(i); // remove the point from the index
                     break;
                 }
 
-                // check in duplicates of entries
+                // no duplicates if pk in index
+                /*
                 for (Point duplicate : entry.duplicates) {
                     if (duplicate.pkValue.equals(pk)) {
                         point = duplicate;
@@ -206,7 +208,7 @@ public class OctTree implements Serializable {
                     }
                 }
 
-                if (brk) break;
+                if (brk) break;  */
             }
         }
         if (point != null) { // update the point
@@ -215,6 +217,7 @@ public class OctTree implements Serializable {
                     point.cols[i] = (Comparable) htblColNameValue.get(colNamesDatatypes[i][0]);
                 }
             }
+            root.insert(point); // insert the new point
             return point;
         }
         return null; // not found
@@ -234,10 +237,18 @@ public class OctTree implements Serializable {
         if (!anyColUpdatedIsIndexed)
             return; // no indexed cols updated
 
-        // search for the leaf node that contains the pk
+        // search for the point in the leaf node that contains the pk and delete it
+        Point p = root.searchPkAttributeAndDelete(pkValue);
+        if (p == null)
+            return; // not found
 
-
-
+        // re-insert the point with the updated values
+        for (int i = 0; i < colNamesDatatypes.length; i++) {
+            if (htblColNameValue.containsKey(colNamesDatatypes[i][0])) {
+                p.cols[i] = (Comparable) htblColNameValue.get(colNamesDatatypes[i][0]);
+            }
+        }
+        root.insert(p);// insert the updated point
     }
 
 
@@ -251,7 +262,7 @@ public class OctTree implements Serializable {
 
     public void serializeIndex () {
         try {
-            FileOutputStream fos = new FileOutputStream(sIndexName + ".class");
+            FileOutputStream fos = new FileOutputStream("src/main/resources/indices/" + sIndexName + ".class");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
             oos.close();
@@ -260,6 +271,19 @@ public class OctTree implements Serializable {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static OctTree deserializeIndex(String IndexName) throws DBAppException {
+        try {
+            FileInputStream fis = new FileInputStream("src/main/resources/indices/" + IndexName + ".class");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            OctTree index = (OctTree) ois.readObject();
+            ois.close();
+            fis.close();
+            return index;
+        } catch (Exception e) {
+            throw new DBAppException(e);
         }
     }
 

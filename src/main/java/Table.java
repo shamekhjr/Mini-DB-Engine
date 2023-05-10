@@ -474,10 +474,54 @@ public class Table implements java.io.Serializable {
             throw new DBAppException(e);
         }
 
-        // TODO check for index usage
-        boolean applicableIndex = false;
-        if (applicableIndex) {
+        // check for relevant indices
+        boolean applicableSearchIndex = false;
+        String applicableIndexName = "";
+        // load all relevant indices from metadata
+        Hashtable<String, Object> indices = getRelevantIndices(htblColNameValue);
+        for (String indexName : indices.keySet()) {
+            // check if the index is applicable for search (contains the clustering key)
+            if (indexName.substring(0,3).equals("pk_")) {
+                applicableSearchIndex = true;
+                applicableIndexName = indexName;
+                break;
+            }
+        }
+
+        // check for an index with the pk
+        if (applicableSearchIndex) {
+            // load the index
+            OctTree index = OctTree.deserializeIndex(applicableIndexName);
+            int pageNum = index.getPageByPkAndUpdate(sClusteringKey, ((Comparable) htblColNameValue.get(sClusteringKey)), htblColNameValue);
+            if (pageNum == -1) {
+                return; // pk not found
+            }
             // update using index
+            Page targetPage = new Page(sTableName, sClusteringKey, pageNum, true);
+
+            // binary search on the page
+            int lo = 0;
+            int hi = targetPage.size() - 1;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                if (((Comparable) targetPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) < 0) {
+                    lo = mid + 1;
+                } else if (((Comparable) targetPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) > 0) {
+                    hi = mid - 1;
+                } else { // found the record
+                    Hashtable<String, Object> hTemp = targetPage.vRecords.get(mid);
+
+                    // Step 3: Update the record
+                    for (String key : htblColNameValue.keySet()) {
+                        hTemp.put(key, htblColNameValue.get(key));
+                    }
+
+                    // Step 4: Serialize the page
+                    targetPage.serializePage();
+                }
+            }
+            index.serializeIndex();
+
         } else {
 
             // Step 1: Search for the page that contain the Clustering key value.
@@ -506,11 +550,62 @@ public class Table implements java.io.Serializable {
                 // Step 4: Serialize the page
                 targetPage.serializePage();
             }
+
         }
+        // update all indices
+        for (String indexName : indices.keySet()) {
+            // check if the index is applicable for search (contains the clustering key)
+            if (!indexName.substring(0,3).equals("pk_") && !indexName.equals("max")) {
+                OctTree index = OctTree.deserializeIndex(indexName);
+                index.updateIndex(sClusteringKey, ((Comparable) htblColNameValue.get(sClusteringKey)), htblColNameValue);
+                index.serializeIndex();
+            }
+        }
+
     }
 
     public void searchInTable() {
         // use searchRecords instead?
+    }
+
+    // gets all the indices that index any of the input cols, also returns the index with highest colCount
+    public Hashtable<String, Object> getRelevantIndices(Hashtable<String, Object> colsOfInterest) throws DBAppException {
+        CSVReader reader;
+        try {
+            reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
+            boolean found = false;
+            Hashtable<String, Object> result = new Hashtable<>();
+            int max = 0;
+            String maxIndex = "";
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals(sTableName)) {
+                    found = true;
+                    for (String col: colsOfInterest.keySet()) {
+                        if (line[1].equals(col)) {
+                            if (line[4] != null) {
+                                if (result.containsKey(line[4])) {
+                                    int newCount = (int) result.get(line[4]) + 1;
+                                    if (newCount > max) {
+                                        max = newCount;
+                                        maxIndex = line[4];
+                                    }
+                                    result.put(line[4], newCount);
+                                } else {
+                                    result.put(line[4], 1);
+                                }
+                            }
+                        }
+                    }
+                } else if (found) {
+                    break;
+                }
+            }
+            if (result.size() > 0) result.put("max", maxIndex);
+            return result;
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
     }
 
     // Note: this method is not used in the project, not required
