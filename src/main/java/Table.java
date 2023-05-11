@@ -253,7 +253,7 @@ public class Table implements java.io.Serializable {
 
 
         //load the index if it exists (i need to load it not create new octtree)
-        OctTree index = (hasIndex)?new OctTree(bestIndex, indexColsArr[0], indexColsArr[1],indexColsArr[2],strTableName,indexCols.contains(sClusteringKey)):null;
+        OctTree index = (hasIndex)?OctTree.deserializeIndex(strTableName):null;
 
         //delete table if the input is empty
         if (htblColNameValue.isEmpty()) {
