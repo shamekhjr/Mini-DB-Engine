@@ -265,6 +265,7 @@ public class Table implements java.io.Serializable {
             if (hasIndex) {
                 //call deleteAll() method that deletes all points from the index
                 index.deleteAll();
+                //TODO: call deleteAll() from other indices in relIndices
             }
 
             //deleteTable();
