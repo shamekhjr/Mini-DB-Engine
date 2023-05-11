@@ -163,9 +163,10 @@ public class OctTree implements Serializable {
         for (int i = 0; i < root.children.length; i++) {
             root.children[i] = null;
         }
+        System.gc();
         //re-serialize OctTree
         serializeIndex();
-        System.gc();
+
     }
 
     //will be used in deleteFromTable to find records and update the page numbers
