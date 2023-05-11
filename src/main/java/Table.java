@@ -225,27 +225,35 @@ public class Table implements java.io.Serializable {
         int deletedRecords = 0;
         boolean hasIndex = false;
         HashSet<String> indexCols = new HashSet<String>(); //store names of cols with an index
+        String bestIndex = ""; //name of the best index to use
 
-        //check if index has been created on this column
-        try {
-            CSVReader reader = new CSVReader(new FileReader("data/metadata.csv"));
+        Hashtable<String, Object> relIndices = getRelevantIndices(htblColNameValue);
+        if (!relIndices.isEmpty()) { //there are useful indices
+            hasIndex = true;
+            bestIndex = (String) relIndices.get("max");
 
-            String[] nextLine;
-            while ((nextLine = reader.readNext()) != null) {
-                if (nextLine[0].equals(strTableName) && !nextLine[4].equals("null")) {
-                    hasIndex = true;
-                    indexCols.add(nextLine[1]);
-                    break;
+            //find col names of that index
+            try {
+                CSVReader reader = new CSVReader(new FileReader("data/metadata.csv"));
+
+                String[] nextLine;
+                while ((nextLine = reader.readNext()) != null) {
+                    if (nextLine[0].equals(strTableName) && nextLine[4].equals(bestIndex)) {
+                        indexCols.add(nextLine[1]);
+                        break;
+                    }
                 }
+
+            } catch(Exception e) {
+                throw new DBAppException(e);
             }
-
-        } catch(Exception e) {
-            throw new DBAppException(e);
         }
+        String[] indexColsArr = indexCols.toArray(new String[indexCols.size()]);
 
-        //load the index if it exists (replace the null after the '?')
-        //TODO: handle what if there are 2 indices created on the same table (6 cols total)
-        OctTree index = (hasIndex)?null:null;
+
+
+        //load the index if it exists (i need to load it not create new octtree)
+        OctTree index = (hasIndex)?new OctTree(bestIndex, indexColsArr[0], indexColsArr[1],indexColsArr[2],strTableName,indexCols.contains(sClusteringKey)):null;
 
         //delete table if the input is empty
         if (htblColNameValue.isEmpty()) {
@@ -271,25 +279,8 @@ public class Table implements java.io.Serializable {
         Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> vRelevantRecords = new Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>>();
 
         if (hasIndex) {
-            //TODO: check colNames to decide which searchFunction to use
-            int colIndices = 0;
-            for (String colName : indexCols) {
-                if (htblColNameValue.containsKey(colName)) {
-                    colIndices++;
-                }
-            }
-            if (colIndices > 3) {
-                //TODO: choose an index then get all the records then compare them here ig
-            } else {
-                switch (colIndices) {
-                    case 1: //TODO: call search 1 col
-                    case 2: //TODO: call search 2 col
-                    case 3: //TODO: call search 3 col
-                    default: vRelevantRecords = searchRecords(htblColNameValue); break;
-
-                }
-            }
-
+            Vector<OctTreeNode> nodesToCheck = index.root.searchExactQueries(htblColNameValue);
+            //TODO: populate the vRelevantRecords vector
 
         } else {
             vRelevantRecords = searchRecords(htblColNameValue);
@@ -332,7 +323,7 @@ public class Table implements java.io.Serializable {
             //remove the record
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
             deletedRecords++;
-            //TODO: load octree and delete that point (requires loading/using loaded instance of OctTree)
+            //TODO: load octtrees and call delete on all of them to delete that point
 
             //remove primary key
             cslsClusterValues.remove(vRelevantRecords.get(i).val2.get(sClusteringKey));
