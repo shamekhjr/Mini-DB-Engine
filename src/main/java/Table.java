@@ -252,7 +252,7 @@ public class Table implements java.io.Serializable {
 
 
 
-        //load the index if it exists (i need to load it not create new octtree)
+        //load the index if it exists
         OctTree index = (hasIndex)?OctTree.deserializeIndex(bestIndex):null;
 
         //delete table if the input is empty
@@ -265,7 +265,14 @@ public class Table implements java.io.Serializable {
             if (hasIndex) {
                 //call deleteAll() method that deletes all points from the index
                 index.deleteAll();
-                //TODO: call deleteAll() from other indices in relIndices
+
+                //call deleteAll() from other indices in relIndices
+                for (String indexName : relIndices.keySet()) {
+                    if (!indexName.equals(bestIndex)) {
+                        OctTree indexToClear = OctTree.deserializeIndex(indexName);
+                        indexToClear.deleteAll();
+                    }
+                }
             }
 
             //deleteTable();
