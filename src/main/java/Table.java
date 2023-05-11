@@ -226,6 +226,7 @@ public class Table implements java.io.Serializable {
 
         int deletedRecords = 0;
         boolean hasIndex = false;
+        HashSet<String> indexCols = new HashSet<String>(); //store names of cols with an index
 
         //check if index has been created on this column
         try {
@@ -235,6 +236,7 @@ public class Table implements java.io.Serializable {
             while ((nextLine = reader.readNext()) != null) {
                 if (nextLine[0].equals(strTableName) && !nextLine[4].equals("null")) {
                     hasIndex = true;
+                    indexCols.add(nextLine[1]);
                     break;
                 }
             }
@@ -244,6 +246,7 @@ public class Table implements java.io.Serializable {
         }
 
         //load the index if it exists (replace the null after the '?')
+        //TODO: handle what if there are 2 indices created on the same table (6 cols total)
         OctTree index = (hasIndex)?null:null;
 
         //delete table if the input is empty
@@ -254,10 +257,9 @@ public class Table implements java.io.Serializable {
                 pPage.deletePage();
             }
             if (hasIndex) {
-                //TODO: call deleteAll() method and delete all records (requires loading OctTree first)
+                //call deleteAll() method that deletes all points from the index
                 index.deleteAll();
             }
-
 
             //deleteTable();
             //output to user
@@ -268,7 +270,34 @@ public class Table implements java.io.Serializable {
         //search for all relevant data given the conditions
         //first integer is pageNumber
         //second integer is recordIndex
-        Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> vRelevantRecords = searchRecords(htblColNameValue);
+        Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>> vRelevantRecords = new Vector<Pair<Pair<Integer, Integer>, Hashtable<String, Object>>>();
+
+        if (hasIndex) {
+            //TODO: check colNames to decide which searchFunction to use
+            int colIndices = 0;
+            for (String colName : indexCols) {
+                if (htblColNameValue.containsKey(colName)) {
+                    colIndices++;
+                }
+            }
+            if (colIndices > 3) {
+                //TODO: choose an index then get all the records then compare them here ig
+            } else {
+                switch (colIndices) {
+                    case 1: //TODO: call search 1 col
+                    case 2: //TODO: call search 2 col
+                    case 3: //TODO: call search 3 col
+                    default: vRelevantRecords = searchRecords(htblColNameValue); break;
+
+                }
+            }
+
+
+        } else {
+            vRelevantRecords = searchRecords(htblColNameValue);
+        }
+
+
         if (vRelevantRecords.isEmpty()) {
             //output to user
             System.out.println("Deleted 0 records from table " + strTableName);
