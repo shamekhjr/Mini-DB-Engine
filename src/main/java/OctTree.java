@@ -163,6 +163,8 @@ public class OctTree implements Serializable {
         for (int i = 0; i < root.children.length; i++) {
             root.children[i] = null;
         }
+        //re-serialize OctTree
+        serializeIndex();
         System.gc();
     }
 
