@@ -28,7 +28,6 @@ public class OctTree implements Serializable {
             throw new DBAppException(e);
         }
         this.onPrimaryKey = onPrimaryKey;
-        // TODO update metadata
     }
 
     public int loadMaxEntries() throws DBAppException {

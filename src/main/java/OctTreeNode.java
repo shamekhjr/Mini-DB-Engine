@@ -29,31 +29,37 @@ public class OctTreeNode  implements Serializable {
    }
 
    public boolean wraps(Point p) {
-       // TODO accept less than 3 cols
-//        return  (p.col1.compareTo(hMinMaxPerColumn.get(colNamesDatatypes[0][0])) >= 0 && p.col1.compareTo(maxC1) <= 0) &&
-//                (p.col2.compareTo(minC2) >= 0 && p.col2.compareTo(maxC2) <= 0) &&
-//                (p.col3.compareTo(minC3) >= 0 && p.col3.compareTo(maxC3) <= 0);
-       return true;
+        return  (p.cols[0].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[0][0]).val1) >= 0 && p.cols[0].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[0][0]).val2) <= 0) &&
+                (p.cols[1].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[1][0]).val1) >= 0 && p.cols[1].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[1][0]).val2) <= 0) &&
+                (p.cols[2].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[2][0]).val1) >= 0 && p.cols[2].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[2][0]).val2) <= 0);
    }
 
    public void insert(Point p) { // finds the not full wrapping OctTreeNode and inserts, insert/subdivide-&-insert
        if(!isLeaf) {
-           // find child that wraps e
-           // insert in child
+           for (OctTreeNode child: children) { // find child that wraps p
+               if (child.wraps(p)) {
+                   child.insert(p);
+                   break;
+               }
+           }
        } else {
            boolean duplicates = false;
            if (this.wraps(p)) {
                if (duplicates) { // check if duplicates
-
+                    for (Point entry: points) {
+                        if (entry.equals(p)) {
+                            entry.duplicates.add(p);
+                            break;
+                        }
+                    }
                } else if (points.size() < maxEntries) { // check if space
                    points.add(p);
-               } else {
+               } else { // node is full, split
                    // TODO
                    subdivide();
                    distribute();
                    this.isLeaf = false;
-                   insert(p);
-                   // insert in division
+                   this.insert(p);
                }
            }
        }

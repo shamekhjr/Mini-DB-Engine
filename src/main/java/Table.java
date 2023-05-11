@@ -1,7 +1,5 @@
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvValidationException;
-
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

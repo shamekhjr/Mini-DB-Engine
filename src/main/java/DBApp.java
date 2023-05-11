@@ -202,13 +202,12 @@ public class DBApp {
 
 
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
-        // TODO add input validation (colNames, object types, range check, etc.)
-        validateSQLTerms(arrSQLTerms);
-
         // check for correct number of operators
         if (arrSQLTerms.length - 1 != strarrOperators.length) {
             throw new DBAppException("Invalid number of operators");
         }
+
+        validateSQLTerms(arrSQLTerms);
 
         try {
             // load the table from hard disk
@@ -231,14 +230,114 @@ public class DBApp {
     // If three column names are passed, create an octree.
     // If only one or two column names is passed, throw an Exception.
     public void createIndex(String strTableName, String[] strarrColName) throws DBAppException {
-        //TODO add input validation (colNames, object types, range check, etc.)
-
         // check if the number of columns is correct
         if (strarrColName.length != 3) {
-            throw new DBAppException("Invalid number of columns");
+            throw new DBAppException("Invalid number of columns. Must be 3, supplied: " + strarrColName.length);
         }
 
+        // check on col names and table name
+        boolean tableFound = false;
+        boolean[] colsFound = new boolean[strarrColName.length];
+        try {
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals(strTableName)) {
+                    tableFound = true;
+                    int i = 0;
+                    for (String colName: strarrColName) {
+                        if (line[1].equals(colName)) {
+                            colsFound[i] = true;
+                        }
+                        i++;
+                    }
+                } else if (tableFound) {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
 
+        if (!tableFound) {
+            throw new DBAppException("Table " + strTableName + " does not exist.");
+        }
+
+        if (!colsFound[0] || !colsFound[1] || !colsFound[2]) {
+            throw new DBAppException("One or more columns do not exist in table " + strTableName);
+        }
+
+        // load the table from hard disk
+        Table t = Table.loadTable(strTableName);
+
+        // check if an index exists on one of the cols
+        Hashtable<String, Object> htTest = new Hashtable<>();
+        for (String colName: strarrColName) {
+            htTest.put(colName, 0);
+        }
+        Hashtable<String, Object> res = t.getRelevantIndices(htTest);
+        if (res.size() != 0) {
+            throw new DBAppException("Index already exists on one or more columns, " + res.keySet());
+        }
+
+        // Create index name
+        boolean onPrimaryKey = false;
+        String indexName = "";
+        for (String col: strarrColName) {
+            if (col.equals(t.sClusteringKey)) {
+                onPrimaryKey = true;
+            }
+            indexName += col;
+        }
+
+        if (onPrimaryKey) {
+             indexName = "pk_" + indexName;
+        }
+        OctTree octTree = new OctTree(indexName, strarrColName[0], strarrColName[1], strarrColName[2], strTableName, onPrimaryKey);
+
+        // insert all records into the octree
+        for (int i = 0; i < t.iNumOfPages; i++) {
+            Page p = new Page(strTableName, t.sClusteringKey, i, true);
+            for (Hashtable<String, Object> record: p.vRecords) {
+                for (String col: strarrColName) {
+                    if (record.get(col).equals(Null.getInstance())) {
+                        throw new DBAppException("Cannot create index on null values");
+                    }
+                }
+                octTree.insert(record, i, t.sClusteringKey);
+            }
+            p = null;
+            System.gc();
+        }
+
+        // save the index on disk
+        octTree.serializeIndex();
+
+        // update the metadata file
+        try {
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
+            List<String[]> lines = reader.readAll();
+            reader.close();
+            CSVWriter writer = new CSVWriter(new FileWriter("src/main/resources/metadata.csv"));
+            for (String[] line: lines) {
+                if (line[0].equals(strTableName)) {
+                    for (String colName : strarrColName) {
+                        if (line[1].equals(colName)) {
+                            line[4] = indexName;
+                            line[5] = "OcTree";
+                        }
+                    }
+                }
+                writer.writeNext(line);
+            }
+            writer.close();
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+
+        t = null;
+        octTree = null;
+        System.gc();
 
     }
 
