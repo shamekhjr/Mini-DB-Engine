@@ -224,10 +224,12 @@ public class Table implements java.io.Serializable {
 
         int deletedRecords = 0;
         boolean hasIndex = false;
-        HashSet<String> indexCols = new HashSet<String>(); //store names of cols with an index
+        //HashSet<String> indexCols = new HashSet<String>(); //store names of cols with an index
+        Hashtable<String, Object> colNames = getColNames(strTableName); //get col names of table
         String bestIndex = ""; //name of the best index to use
 
         Hashtable<String, Object> relIndices = getRelevantIndices(htblColNameValue);
+        Hashtable<String, Object> allIndices = getRelevantIndices(colNames);
         if (!relIndices.isEmpty()) { //there are useful indices
             hasIndex = true;
             bestIndex = (String) relIndices.get("max");
@@ -239,7 +241,7 @@ public class Table implements java.io.Serializable {
                 String[] nextLine;
                 while ((nextLine = reader.readNext()) != null) {
                     if (nextLine[0].equals(strTableName) && nextLine[4].equals(bestIndex)) {
-                        indexCols.add(nextLine[1]);
+                        //indexCols.add(nextLine[1]);
                         break;
                     }
                 }
@@ -248,7 +250,7 @@ public class Table implements java.io.Serializable {
                 throw new DBAppException(e);
             }
         }
-        String[] indexColsArr = indexCols.toArray(new String[indexCols.size()]);
+        //String[] indexColsArr = indexCols.toArray(new String[indexCols.size()]);
 
 
 
@@ -267,7 +269,7 @@ public class Table implements java.io.Serializable {
                 index.deleteAll();
 
                 //call deleteAll() from other indices in relIndices
-                for (String indexName : relIndices.keySet()) {
+                for (String indexName : allIndices.keySet()) {
                     if (!indexName.equals(bestIndex)) {
                         OctTree indexToClear = OctTree.deserializeIndex(indexName);
                         indexToClear.deleteAll();
@@ -331,7 +333,9 @@ public class Table implements java.io.Serializable {
             //remove the record
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
             deletedRecords++;
+
             //TODO: load octtrees and call delete on all of them to delete that point
+
 
             //remove primary key
             cslsClusterValues.remove(vRelevantRecords.get(i).val2.get(sClusteringKey));
@@ -1023,5 +1027,34 @@ public class Table implements java.io.Serializable {
         catch (Exception e) {
 
         }
+    }
+
+    public static Hashtable<String,Object> getColNames(String sTableName) throws DBAppException {
+        Hashtable<String,Object> htblColNames = new Hashtable<>();
+        CSVReader reader;
+        try {
+            reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+
+        String[] line;
+        boolean found = false;
+        try {
+            while ((line = reader.readNext()) != null) {
+                // Process each line of the CSV file
+
+                if (line[0].equals(sTableName)) {
+                    found = true;
+                    htblColNames.put(line[1], line[2]);
+                } else if (found) {
+                    break; // no need to continue searching
+                }
+
+            }
+        } catch (Exception e) {
+            throw new DBAppException(e);
+        }
+        return htblColNames;
     }
 }
