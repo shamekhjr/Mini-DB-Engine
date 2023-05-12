@@ -80,8 +80,24 @@ public class OctTreeNode  implements Serializable {
 
    }
 
-   public void distribute() {
+   //check the subdivide function for dissecting ranges of a node in order for its children to be assigned to them?
 
+   public void distribute() {
+       //create 8 children and distribute points according to their wrapping
+
+       //creating children in the leaf node
+       for (int i = 0; i < 8; i++) {
+           children[i] = new OctTreeNode(colNamesDatatypes, hMinMaxPerColumn, maxEntries);
+       }
+
+       //assigning points to children according to their ranges
+       for (Point p: points) {
+           for (OctTreeNode child: children) {
+               if (child.wraps(p)) {
+                   child.insert(p);
+               }
+           }
+       }
    }
 
    public void insertInChildren(Point p) {
@@ -103,6 +119,8 @@ public class OctTreeNode  implements Serializable {
        Use the Octree search:
         "if the 3 columns an octree was created on appear in sql term and they are Anded together, then use octree"
          -- Wael Aboulsaadat
+
+         AKA only if the 3 columns are used SIMULTANEOUSLY in the query, then use the octree.
     */
    public Vector<OctTreeNode> searchNode (SQLTerm[] arrSQLTerms) {
         if (isLeaf) {
