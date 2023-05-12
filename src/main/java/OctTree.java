@@ -149,8 +149,31 @@ public class OctTree implements Serializable {
 
     //deletes one record (point) from the index
     //we pass in (something)
-    public void delete() {
-        // TODO
+    public void delete(Pair<Pair<Integer, Integer>, Hashtable<String, Object>> record) throws DBAppException {
+        //compare col names and datatypes of records to that of OctTree
+        Comparable col1 = null;
+        Comparable col2 = null;
+        Comparable col3 = null;
+        for (String colName: record.val2.keySet()) {
+            //if colName is in octree and datatypes match then we can create Comparable to add to Point
+            if (colName.equals(colNamesDatatypes[0][0]) && record.val2.get(colName).getClass().equals(colNamesDatatypes[0][1])) {
+                col1 = (Comparable) record.val2.get(colName);
+            }
+            else if (colName.equals(colNamesDatatypes[1][0]) && record.val2.get(colName).getClass().equals(colNamesDatatypes[1][1])) {
+                col2 = (Comparable) record.val2.get(colName);
+            }
+            else if (colName.equals(colNamesDatatypes[2][0]) && record.val2.get(colName).getClass().equals(colNamesDatatypes[2][1])) {
+                col3 = (Comparable) record.val2.get(colName);
+            }
+            else {
+                throw new DBAppException("Invalid data type");
+            }
+
+        }
+
+        //TODO: handle case if one of the col vals remains null
+        Point p = new Point(col1, col2, col3, record.val1.val1, null); //idk what to put makan el null
+        root.delete(p);
     }
 
     //used to clear a table (delete all records without deleting whole table)

@@ -66,12 +66,18 @@ public class OctTreeNode  implements Serializable {
        if (this.wraps(p)) {
            for (Point entry: points) {
                if (entry.equals(p)) {
-                     points.remove(entry);
+                   entry.duplicates = null;
+                   points.remove(entry);
                }
            }
            return true;
        } else {
            // find child that wraps e
+              for (OctTreeNode child: children) {
+                if (child.wraps(p)) {
+                     child.delete(p);
+                }
+              }
        }
        return false;
    }

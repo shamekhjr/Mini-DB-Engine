@@ -334,7 +334,11 @@ public class Table implements java.io.Serializable {
             pPageToLoad.vRecords.remove(iRecordIndexInPage);
             deletedRecords++;
 
-            //TODO: load octtrees and call delete on all of them to delete that point
+            //load octtrees and call delete on all of them to delete that point
+            for (String indexName : allIndices.keySet()) {
+                OctTree indexToClear = OctTree.deserializeIndex(indexName);
+                indexToClear.delete(vRelevantRecords.get(i));
+            }
 
 
             //remove primary key
