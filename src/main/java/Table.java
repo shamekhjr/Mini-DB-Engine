@@ -609,7 +609,7 @@ public class Table implements java.io.Serializable {
                     found = true;
                     for (String col: colsOfInterest.keySet()) {
                         if (line[1].equals(col)) {
-                            if (line[4] != null) { // I do not think that will work as you have to do it as follows line[4].equals("") Note: check the main method in the Table class.
+                            if (!line[4].equals("")) {
                                 if (result.containsKey(line[4])) {
                                     int newCount = (int) result.get(line[4]) + 1;
                                     if (newCount > max) {
@@ -623,7 +623,7 @@ public class Table implements java.io.Serializable {
                             }
                         }
                     }
-                } else if (found) { // no need for the "else if" and maybe cause corner cases (based on our implementation it should not, but it still annoys me).
+                } else if (found) {
                     break;
                 }
             }
