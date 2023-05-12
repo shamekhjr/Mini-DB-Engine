@@ -390,7 +390,14 @@ public class Table implements java.io.Serializable {
             if (oldIndex > minIndex){
                 File f2 = new File("src/main/resources/data/"+strTableName+"/"+sTableName+"_page"+oldIndex+".class");
                 f2.renameTo(new File("src/main/resources/data/"+strTableName+"/"+sTableName+"_page"+newIndex+".class"));
-                //TODO: update reference number in index (find any point with reference as the old page and change it to the new page)
+
+                //update reference number in index (find any point with reference as the old page and change it to the new page)
+                for (String indexName : allIndices.keySet()) {
+                    OctTree indexToClear = OctTree.deserializeIndex(indexName);
+                    indexToClear.updateRefNum(oldIndex, newIndex);
+                }
+
+
 //                Page pToBeRenamed = new Page(strTableName, sClusteringKey, oldIndex, true);
 //                pToBeRenamed.index = newIndex;
                 newIndex++;

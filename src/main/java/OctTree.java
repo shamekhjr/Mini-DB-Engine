@@ -172,6 +172,10 @@ public class OctTree implements Serializable {
         }
 
         //TODO: handle case if one of the col vals remains null
+        if (col1 == null && col2 == null && col3 == null)
+            return;
+
+
         Point p = new Point(col1, col2, col3, record.val1.val1, null); //idk what to put makan el null
         root.delete(p);
     }
@@ -193,8 +197,8 @@ public class OctTree implements Serializable {
     }
 
     //will be used in deleteFromTable to find records and update the page numbers
-    public void updateRefNum() {
-        // TODO
+    public void updateRefNum(int oldIndex, int newIndex) {
+        root.updateRefNum(oldIndex, newIndex);
     }
 
     public Vector<Point> search(Point e) {

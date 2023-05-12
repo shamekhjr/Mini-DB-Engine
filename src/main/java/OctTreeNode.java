@@ -360,4 +360,25 @@ public class OctTreeNode  implements Serializable {
             return null;
         }
     }
+
+    public void updateRefNum(int oldIndex, int newIndex) {
+        if (isLeaf) {
+            for (int i = 0; i < points.size(); i++) {
+                if (points.get(i).reference == oldIndex) {
+                    points.get(i).reference = newIndex;
+                }
+                for (int j = 0; j < points.get(i).duplicates.size(); j++) {
+                    if (points.get(i).duplicates.get(j).reference == oldIndex) {
+                        points.get(i).duplicates.get(j).reference = newIndex;
+                    }
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < children.length; i++) {
+                OctTreeNode current = children[i];
+                current.updateRefNum(oldIndex, newIndex);
+            }
+        }
+    }
 }
