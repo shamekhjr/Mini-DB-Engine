@@ -609,7 +609,7 @@ public class Table implements java.io.Serializable {
                     found = true;
                     for (String col: colsOfInterest.keySet()) {
                         if (line[1].equals(col)) {
-                            if (!line[4].equals("")) {
+                            if (!line[4].equals("null")) {
                                 if (result.containsKey(line[4])) {
                                     int newCount = (int) result.get(line[4]) + 1;
                                     if (newCount > max) {
