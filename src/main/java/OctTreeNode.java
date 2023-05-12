@@ -43,19 +43,16 @@ public class OctTreeNode  implements Serializable {
                }
            }
        } else {
-           boolean duplicates = false;
            if (this.wraps(p)) {
-               if (duplicates) { // check if duplicates
-                    for (Point entry: points) {
-                        if (entry.equals(p)) {
-                            entry.duplicates.add(p);
-                            break;
-                        }
-                    }
-               } else if (points.size() < maxEntries) { // check if space
+               for (Point entry: points) { // check if it is a duplicate
+                   if (entry.equals(p)) {
+                       entry.duplicates.add(p);
+                       return;
+                   }
+               }
+               if (points.size() < maxEntries) { // check if space
                    points.add(p);
                } else { // node is full, split
-                   // TODO
                    subdivide();
                    distribute();
                    this.isLeaf = false;
