@@ -1057,7 +1057,7 @@ public class Table implements java.io.Serializable {
 
                 if (line[0].equals(sTableName)) {
                     found = true;
-                    htblColNames.put(line[1], line[2]);
+                    htblColNames.put(line[1], null);
                 } else if (found) {
                     break; // no need to continue searching
                 }
