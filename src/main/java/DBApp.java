@@ -37,11 +37,48 @@ public class DBApp {
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
-        // load table data from hard disk
+
         try {
+            // 1. Load Table.
             Table tTable = Table.loadTable(strTableName);
+            // 2. Call getRelevantIndices built on the table of the inserted row. (Thank you Omar ^-^)
+            Hashtable<String, Object> builtInIndices = tTable.getRelevantIndices(htblColNameValue);
+            // 3. Check that all columns that indices are built on contains a value in the inserted record (a.k.a Hashtable). Otherwise, throw a DBAppException.
+            for (String key : builtInIndices.keySet()) {
+                if (!key.equals("max")) {
+                    // Load Octree index.
+                    OctTree builtInOctree = OctTree.deserializeIndex(key);
+                    String[][] colNamesDatatypes = builtInOctree.colNamesDatatypes;
+                    builtInOctree.serializeIndex();
+                    if (htblColNameValue.get(colNamesDatatypes[0][0]) == null) {
+                        throw new DBAppException("To insert into the " + key + " index, The value of the column " + colNamesDatatypes[0][0] + " can not be null.");
+                    }
+                    if (htblColNameValue.get(colNamesDatatypes[1][0]) == null) {
+                        throw new DBAppException("To insert into the " + key + " index, The value of the column " + colNamesDatatypes[1][0] + " can not be null.");
+                    }
+                    if (htblColNameValue.get(colNamesDatatypes[2][0]) == null) {
+                        throw new DBAppException("To insert into the " + key + " index, The value of the column " + colNamesDatatypes[2][0] + " can not be null.");
+                    }
+                }
+            }
+            // 4. Insert the record into the Table.
             tTable.insertIntoTable(htblColNameValue);
+            // 5. Search the table for the record to get the page number where the record is inserted in it.
+            Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchPageNumber = tTable.searchRecords(htblColNameValue);
+            // 6. Serialize Table.
             tTable.serializeTable();
+
+            Pair<Pair<Integer,Integer>,Hashtable<String,Object>> pair = searchPageNumber.firstElement();
+            int pageNumber = pair.val1.val1;
+            // 7. Call Octree insert method.
+            for (String key : builtInIndices.keySet()) {
+                if (!key.equals("max")) {
+                    OctTree builtInOctree = OctTree.deserializeIndex(key);
+                    builtInOctree.insert(htblColNameValue, pageNumber, tTable.sClusteringKey);
+                    builtInOctree.serializeIndex();
+                }
+            }
+
         } catch (Exception e) { // if table does not exist or some error happened
             throw new DBAppException(e);
         }
