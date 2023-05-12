@@ -609,7 +609,7 @@ public class Table implements java.io.Serializable {
                     found = true;
                     for (String col: colsOfInterest.keySet()) {
                         if (line[1].equals(col)) {
-                            if (line[4] != null) {
+                            if (line[4] != null) { // I do not think that will work as you have to do it as follows line[4].equals("") Note: check the main method in the Table class.
                                 if (result.containsKey(line[4])) {
                                     int newCount = (int) result.get(line[4]) + 1;
                                     if (newCount > max) {
@@ -623,11 +623,13 @@ public class Table implements java.io.Serializable {
                             }
                         }
                     }
-                } else if (found) {
+                } else if (found) { // no need for the "else if" and maybe cause corner cases (based on our implementation it should not, but it still annoys me).
                     break;
                 }
             }
-            if (result.size() > 0) result.put("max", maxIndex);
+            if (result.size() > 0) {
+                result.put("max", maxIndex);
+            }
             return result;
         } catch (Exception e) {
             throw new DBAppException(e);
@@ -1000,5 +1002,26 @@ public class Table implements java.io.Serializable {
             i++;
         }
         System.out.println("====================================");
+    }
+
+    // Before running the main method, insert the following line the CSV file.
+    // "Student", "","","","","","",""
+    public static void main (String args[]) {
+        CSVReader reader;
+        try {
+            reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
+            boolean found = false;
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[0].equals("Student")) {
+                    if (line[4] == null) {
+                        System.out.println(line); //  No printing will occurs but if change it to line[4].equals("") a print will occur.
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+
+        }
     }
 }

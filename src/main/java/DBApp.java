@@ -42,7 +42,12 @@ public class DBApp {
             // 1. Load Table.
             Table tTable = Table.loadTable(strTableName);
             // 2. Call getRelevantIndices built on the table of the inserted row. (Thank you Omar ^-^)
-            Hashtable<String, Object> builtInIndices = tTable.getRelevantIndices(htblColNameValue);
+            Hashtable<String, Object> colsOfInterest = new Hashtable<>();
+            // We do not care about the value of each column in the Hashtable, we only care that all columns of the table exists in the Hashtable.
+            for (String key : tTable.cslsColNames) {
+                colsOfInterest.put(key, new Null());
+            }
+            Hashtable<String, Object> builtInIndices = tTable.getRelevantIndices(colsOfInterest);
             // 3. Check that all columns that indices are built on contains a value in the inserted record (a.k.a Hashtable). Otherwise, throw a DBAppException.
             for (String key : builtInIndices.keySet()) {
                 if (!key.equals("max")) {
@@ -50,13 +55,13 @@ public class DBApp {
                     OctTree builtInOctree = OctTree.deserializeIndex(key);
                     String[][] colNamesDatatypes = builtInOctree.colNamesDatatypes;
                     builtInOctree.serializeIndex();
-                    if (htblColNameValue.get(colNamesDatatypes[0][0]) == null) {
+                    if (!htblColNameValue.containsKey(colNamesDatatypes[0][0])) {
                         throw new DBAppException("To insert into the " + key + " index, The value of the column " + colNamesDatatypes[0][0] + " can not be null.");
                     }
-                    if (htblColNameValue.get(colNamesDatatypes[1][0]) == null) {
+                    if (!htblColNameValue.containsKey(colNamesDatatypes[1][0])) {
                         throw new DBAppException("To insert into the " + key + " index, The value of the column " + colNamesDatatypes[1][0] + " can not be null.");
                     }
-                    if (htblColNameValue.get(colNamesDatatypes[2][0]) == null) {
+                    if (!htblColNameValue.containsKey(colNamesDatatypes[2][0])) {
                         throw new DBAppException("To insert into the " + key + " index, The value of the column " + colNamesDatatypes[2][0] + " can not be null.");
                     }
                 }

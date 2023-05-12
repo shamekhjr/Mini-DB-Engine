@@ -263,9 +263,6 @@ public class OctTree implements Serializable {
     }
 
     public  Vector<Pair<Integer, Comparable>> search (SQLTerm[] arrSQLTerms) {
-        // TODO CHECKS
-
-
         // TODO CODE
         Vector<Pair<Integer, Comparable>> resultPagePK = new Vector<>();
         Vector<OctTreeNode> vecResultOctTreeNodes = root.searchNode(arrSQLTerms);
