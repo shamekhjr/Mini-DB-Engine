@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentMap;
 public class OctTreeNode  implements Serializable {
     public Vector<Point> points;
     public OctTreeNode[] children;
-    String[][] colNamesDatatypes;
+    String[][] colNamesDatatypes; // Column Name | Data type
     public Hashtable<String, Pair<Comparable, Comparable>> hMinMaxPerColumn; // Hashtable< Column Name, Pair< Minimum, Maximum> >
     public int maxEntries;
     boolean isLeaf; //TODO ALWAYS UPDATE THIS

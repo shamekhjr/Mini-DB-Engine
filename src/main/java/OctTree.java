@@ -176,6 +176,7 @@ public class OctTree implements Serializable {
             return;
 
 
+        //  TODO Must return vector of points and for each point get the record that it reference in the page. Check whether the value of the record matches the other conditions.
         Point p = new Point(col1, col2, col3, record.val1.val1, null); //idk what to put makan el null
         root.delete(p);
     }
