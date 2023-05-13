@@ -98,7 +98,7 @@ public class Table implements java.io.Serializable {
 
     }
 
-    public void insertIntoTable(Hashtable<String,Object> htblColNameValue) throws DBAppException {
+    public Vector<Hashtable<String, Object>> insertIntoTable(Hashtable<String,Object> htblColNameValue) throws DBAppException {
         /* NOTES:
             - check for input (size and datatypes), (Note: date acceptable format is "YYYY-MM-DD")
             - don't insert more than N (consult DBApp.config)
@@ -128,6 +128,8 @@ public class Table implements java.io.Serializable {
         }
 
         cslsClusterValues.add(htblColNameValue.get(sClusteringKey)); // add to the ClusterValues list
+
+        Vector<Hashtable<String,Object>> firstRecords = new Vector<>();
 
         // check if this is the first insert
         if (iNumOfPages == 0) {
@@ -167,7 +169,7 @@ public class Table implements java.io.Serializable {
             if (bIsFull) {
                 // get the last row in the page and delete it
                 Hashtable<String, Object> htblLastRow = pInsertPage.vRecords.get(pInsertPage.size()-1);
-                pInsertPage.vRecords.remove(pInsertPage.size()-1);
+                firstRecords.add(pInsertPage.vRecords.remove(pInsertPage.size()-1));
 
                 // check if last page
                 if (iInsertPageNum == iNumOfPages - 1) {
@@ -188,7 +190,7 @@ public class Table implements java.io.Serializable {
 
                             // get the last row in the page and delete it
                             htblLastRow = pPage.vRecords.get(pPage.size()-1);
-                            pPage.vRecords.remove(pPage.size()-1);
+                            firstRecords.add(pPage.vRecords.remove(pPage.size()-1));
                             updatePageMeta(pPage);
                             pPage.serializePage();
 
@@ -217,6 +219,7 @@ public class Table implements java.io.Serializable {
             pInsertPage.serializePage();
         }
         iNumOfRows++;
+        return firstRecords;
     }
 
     public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
@@ -1067,5 +1070,19 @@ public class Table implements java.io.Serializable {
             throw new DBAppException(e);
         }
         return htblColNames;
+    }
+
+    public static int loadMaxEntries() throws DBAppException {
+        String _filename = "src/main/resources/DBApp.config"; // File that contain configuration
+        Properties configProperties = new Properties();
+        try (FileInputStream fis = new FileInputStream(_filename))
+        {
+            configProperties.load(fis);
+        }
+        catch (Exception ex)
+        {
+            throw new DBAppException(ex);
+        }
+        return Integer.parseInt(configProperties.getProperty("MaximumRowsCountinTablePage"));
     }
 }

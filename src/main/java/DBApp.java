@@ -37,22 +37,28 @@ public class DBApp {
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
-
         try {
-            // 1. Load Table.
+            // Load Table.
             Table tTable = Table.loadTable(strTableName);
-            // 2. Call getRelevantIndices built on the table of the inserted row. (Thank you Omar ^-^)
+
+            // Get the old minMax before insertion
+            Vector<Integer> oldPageRowCount = tTable.vNumberOfRowsPerPage;
+
+            // Call getRelevantIndices built on the table of the inserted row. (Thank you Omar ^-^)
             Hashtable<String, Object> colsOfInterest = new Hashtable<>();
             // We do not care about the value of each column in the Hashtable, we only care that all columns of the table exists in the Hashtable.
             for (String key : tTable.cslsColNames) {
                 colsOfInterest.put(key, new Null());
             }
             Hashtable<String, Object> builtInIndices = tTable.getRelevantIndices(colsOfInterest);
-            // 3. Check that all columns that indices are built on contains a value in the inserted record (a.k.a Hashtable). Otherwise, throw a DBAppException.
+            Vector<OctTree> octTrees = new Vector<>();
+
+            // Check that all columns that indices are built on contains a value in the inserted record (a.k.a Hashtable). Otherwise, throw a DBAppException.
             for (String key : builtInIndices.keySet()) {
                 if (!key.equals("max")) {
                     // Load Octree index.
                     OctTree builtInOctree = OctTree.deserializeIndex(key);
+                    octTrees.add(builtInOctree);
                     String[][] colNamesDatatypes = builtInOctree.colNamesDatatypes;
                     builtInOctree.serializeIndex();
                     if (!htblColNameValue.containsKey(colNamesDatatypes[0][0])) {
@@ -67,7 +73,7 @@ public class DBApp {
                 }
             }
             // 4. Insert the record into the Table.
-            tTable.insertIntoTable(htblColNameValue);
+            Vector<Hashtable<String,Object>> firstRecords = tTable.insertIntoTable(htblColNameValue);
             // 5. Search the table for the record to get the page number where the record is inserted in it.
             Vector<Pair<Pair<Integer,Integer>,Hashtable<String,Object>>> searchPageNumber = tTable.searchRecords(htblColNameValue);
             // 6. Serialize Table.
@@ -75,13 +81,32 @@ public class DBApp {
 
             Pair<Pair<Integer,Integer>,Hashtable<String,Object>> pair = searchPageNumber.firstElement();
             int pageNumber = pair.val1.val1;
-            // 7. Call Octree insert method.
-            for (String key : builtInIndices.keySet()) {
-                if (!key.equals("max")) {
-                    OctTree builtInOctree = OctTree.deserializeIndex(key);
-                    builtInOctree.insert(htblColNameValue, pageNumber, tTable.sClusteringKey);
-                    builtInOctree.serializeIndex();
+
+            int pageMaxEntries = Table.loadMaxEntries();
+
+            // 7. Call Octree insert and update shifted records.
+            int j = 0;
+            for (int i = pageNumber; i < tTable.iNumOfPages - 1; i++) {
+                for (OctTree octTree : octTrees) {
+                    if (pageNumber == i) {
+                        octTree.insert(htblColNameValue, pageNumber, tTable.sClusteringKey);
+                    }
+                    if (oldPageRowCount.get(pageNumber) == pageMaxEntries) {
+                        // update shifted records
+                        Hashtable<String, Object> indexCols = new Hashtable<>();
+                        for (int k = 0; k < octTree.colNamesDatatypes.length; k++) {
+                            indexCols.put(octTree.colNamesDatatypes[k][0], firstRecords.get(j).get(octTree.colNamesDatatypes[k][0]));
+                        }
+                        octTree.updateShiftedRecords(indexCols, htblColNameValue.get(tTable.sClusteringKey), i + 1);
+                        j++;
+                    }
                 }
+                j = 0;
+            }
+
+            // 8. Serialize Octrees.
+            for (OctTree octTree : octTrees) {
+                octTree.serializeIndex();
             }
 
         } catch (Exception e) { // if table does not exist or some error happened
