@@ -62,28 +62,28 @@ public class OctTreeNode  implements Serializable {
        }
    }
 
-   public boolean delete(Point p) {
-       if (this.wraps(p)) {
-           for (Point point: points) {
-               if (point.cols[0].equals(p.cols[0])
-                       && point.cols[1].equals(p.cols[1])
-                       && point.cols[2].equals(p.cols[2])
-                       && point.reference == p.reference) {
+   public void delete(Point p) {
+       if (isLeaf) {
+               for (Point point: points) {
+                   if (point.cols[0].equals(p.cols[0])
+                           && point.cols[1].equals(p.cols[1])
+                           && point.cols[2].equals(p.cols[2])
+                           && point.reference == p.reference) {
 
-                   point.duplicates = null;
-                   points.remove(point);
+                       point.duplicates = null;
+                       points.remove(point);
+                   }
                }
-           }
-           return true;
+
        } else {
            // find child that wraps e
-              for (OctTreeNode child: children) {
-                if (child.wraps(p)) {
-                     child.delete(p);
-                }
-              }
+           for (OctTreeNode child: children) {
+               if (child.wraps(p)) {
+                   child.delete(p);
+               }
+           }
        }
-       return false;
+
    }
 
    public void subdivide() {

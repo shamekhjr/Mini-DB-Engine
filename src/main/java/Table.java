@@ -293,7 +293,56 @@ public class Table implements java.io.Serializable {
 
         if (hasIndex) {
             Vector<OctTreeNode> nodesToCheck = index.root.searchExactQueries(htblColNameValue);
-            //TODO: populate the vRelevantRecords vector
+            //populate the vRelevantRecords vector
+            for (OctTreeNode node : nodesToCheck) {
+                if (node.isLeaf) {
+                    Vector<Point> allPts = new Vector<>();
+                    for (Point p : node.points) {
+                        for (Point duplicate : p.duplicates) {
+                            allPts.add(duplicate);
+                        }
+                        allPts.add(p);
+                    }
+                    for (Point p: allPts) {
+
+                        Page pPage = new Page(strTableName, sClusteringKey, p.reference, true);
+                        if (htblColNameValue.containsKey(sClusteringKey)) {
+                            // binary search on the page
+                            int lo = 0;
+                            int hi = pPage.size() - 1;
+                            while (lo <= hi) {
+                                int mid = (lo + hi) / 2;
+                                if (((Comparable) pPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) < 0) {
+                                    lo = mid + 1;
+                                } else if (((Comparable) pPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) > 0) {
+                                    hi = mid - 1;
+                                } else { // found the record
+                                    Hashtable<String, Object> hTemp = pPage.vRecords.get(mid);
+                                    vRelevantRecords.add(new Pair<Pair<Integer, Integer>, Hashtable<String, Object>>(new Pair<Integer, Integer>(p.reference, mid), hTemp));
+                                    break;
+                                }
+                            }
+
+                        } else {
+                            //search linearly inside the page
+                            for (int i = 0; i < pPage.size(); i++) {
+                                Hashtable<String, Object> hTemp = pPage.vRecords.get(i);
+                                boolean isRelevant = true;
+                                for (String colName : htblColNameValue.keySet()) {
+                                    if (!((Comparable) hTemp.get(colName)).equals(htblColNameValue.get(colName))) {
+                                        isRelevant = false;
+                                        break;
+                                    }
+                                }
+                                if (isRelevant) {
+                                    vRelevantRecords.add(new Pair<Pair<Integer, Integer>, Hashtable<String, Object>>(new Pair<Integer, Integer>(p.reference, i), hTemp));
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
 
         } else {
             vRelevantRecords = searchRecords(htblColNameValue);
@@ -1060,7 +1109,7 @@ public class Table implements java.io.Serializable {
 
                 if (line[0].equals(sTableName)) {
                     found = true;
-                    htblColNames.put(line[1], null);
+                    htblColNames.put(line[1], 0);
                 } else if (found) {
                     break; // no need to continue searching
                 }
