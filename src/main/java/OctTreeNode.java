@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentMap;
@@ -32,6 +33,10 @@ public class OctTreeNode  implements Serializable {
         return  (p.cols[0].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[0][0]).val1) >= 0 && p.cols[0].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[0][0]).val2) <= 0) &&
                 (p.cols[1].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[1][0]).val1) >= 0 && p.cols[1].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[1][0]).val2) <= 0) &&
                 (p.cols[2].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[2][0]).val1) >= 0 && p.cols[2].compareTo(hMinMaxPerColumn.get(colNamesDatatypes[2][0]).val2) <= 0);
+   }
+
+   public void sethMinMaxPerColumn(Hashtable<String, Pair<Comparable, Comparable>> in) {
+       this.hMinMaxPerColumn = in;
    }
 
    public void insert(Point p) { // finds the not full wrapping OctTreeNode and inserts, insert/subdivide-&-insert
@@ -83,19 +88,196 @@ public class OctTreeNode  implements Serializable {
    }
 
    public void subdivide() {
+       for (int i = 0; i < colNamesDatatypes.length; i++) {
+           children[i] = new OctTreeNode(colNamesDatatypes, null, maxEntries);
+       }
+
+       // col1 = x, col2 = y, col3 = z
+       int x = 0;
+       for (String[] colData: colNamesDatatypes) {
+           int finalX = x;
+           if (colData[1].equals("java.lang.Integer")) {
+               Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
+               int min = (int) minMax.val1;
+               int max = (int) minMax.val1;
+
+               // get mid from min and max
+               int mid = min + (max - min) / 2;
+               children[0].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], new Pair<>(min, mid));
+               }});
+               children[1].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(min, mid));
+               }});
+               children[2].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[3].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[4].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0 || finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[5].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[6].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+               children[7].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+           }
+           else if (colData[1].equals("java.lang.String")) {
+               Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
+               String Min = (String) minMax.val1;
+               String max = (String) minMax.val1;
+               Min = concatExtra(Min, max);
+
+               // get mid from min and max
+               String mid = getMidStrings(Min, max, max.length());
+               String min = Min;
+               children[0].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], new Pair<>(min, mid));
+               }});
+               children[1].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(min, mid));
+               }});
+               children[2].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[3].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[4].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0 || finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[5].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[6].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+               children[7].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+           }
+           else if (colData[1].equals("java.lang.Double")) {
+               Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
+               double min = (double) minMax.val1;
+               double max = (double) minMax.val1;
+
+               // get mid from min and max
+               double mid = min + (max - min) / 2.0;
+               children[0].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], new Pair<>(min, mid));
+               }});
+               children[1].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(min, mid));
+               }});
+               children[2].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[3].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[4].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0 || finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[5].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[6].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+               children[7].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+
+           }
+           else if (colData[1].equals("java.util.Date")) {
+               Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
+               Date min = (Date) minMax.val1;
+               Date max = (Date) minMax.val1;
+
+               // get mid from min and max
+               Date mid = new Date((min.getTime() + max.getTime()) / 2);
+               children[0].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], new Pair<>(min, mid));
+               }});
+               children[1].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(min, mid));
+               }});
+               children[2].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[3].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(min, mid));
+               }});
+               children[4].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0 || finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[5].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(min, mid) : new Pair<>(mid, max));
+               }});
+               children[6].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(min, mid) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+               children[7].sethMinMaxPerColumn(new Hashtable<String, Pair<Comparable,Comparable>>() {{
+                   put(colData[0], (finalX == 0) ? new Pair<>(mid, max) : (finalX == 1) ? new Pair<>(mid, max) : new Pair<>(mid, max));
+               }});
+           }
+           x++;
+       }
+   }
+
+   public String concatExtra(String s1, String s2) {
+       return (s1.length() < s2.length()) ? s1 + s2.substring(s1.length()): s1;
+   }
+
+   public String getMidStrings(String S, String T, int N) {
+       // Stores the base 26 digits after addition
+       int[] a1 = new int[N + 1];
+
+       for (int i = 0; i < N; i++) {
+           a1[i + 1] = (int)S.charAt(i) - 97
+                   + (int)T.charAt(i) - 97;
+       }
+
+       // Iterate from right to left
+       // and add carry to next position
+       for (int i = N; i >= 1; i--) {
+           a1[i - 1] += (int)a1[i] / 26;
+           a1[i] %= 26;
+       }
+
+       // Reduce the number to find the middle
+       // string by dividing each position by 2
+       for (int i = 0; i <= N; i++) {
+
+           // If current value is odd,
+           // carry 26 to the next index value
+           if ((a1[i] & 1) != 0) {
+
+               if (i + 1 <= N) {
+                   a1[i + 1] += 26;
+               }
+           }
+
+           a1[i] = (int)a1[i] / 2;
+       }
+
+       StringBuilder sb = new StringBuilder();
+       for (int i = 1; i <= N; i++) {
+           sb.append((char)(a1[i] + 97));
+       }
+         return sb.toString();
 
    }
 
    //check the subdivide function for dissecting ranges of a node in order for its children to be assigned to them?
 
    public void distribute() {
-       //create 8 children and distribute points according to their wrapping
-
-       //creating children in the leaf node
-       for (int i = 0; i < 8; i++) {
-           children[i] = new OctTreeNode(colNamesDatatypes, hMinMaxPerColumn, maxEntries);
-       }
-
        //assigning points to children according to their ranges
        for (Point p: points) {
            for (OctTreeNode child: children) {

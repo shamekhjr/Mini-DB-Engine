@@ -97,7 +97,7 @@ public class DBApp {
                         for (int k = 0; k < octTree.colNamesDatatypes.length; k++) {
                             indexCols.put(octTree.colNamesDatatypes[k][0], firstRecords.get(j).get(octTree.colNamesDatatypes[k][0]));
                         }
-                        octTree.updateShiftedRecords(indexCols, htblColNameValue.get(tTable.sClusteringKey), i + 1);
+                        octTree.updateShiftedRecords(indexCols, htblColNameValue.get(tTable.sClusteringKey), +i + 1);
                         j++;
                     }
                 }
