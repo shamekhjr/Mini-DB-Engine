@@ -64,10 +64,14 @@ public class OctTreeNode  implements Serializable {
 
    public boolean delete(Point p) {
        if (this.wraps(p)) {
-           for (Point entry: points) {
-               if (entry.equals(p)) {
-                   entry.duplicates = null;
-                   points.remove(entry);
+           for (Point point: points) {
+               if (point.cols[0].equals(p.cols[0])
+                       && point.cols[1].equals(p.cols[1])
+                       && point.cols[2].equals(p.cols[2])
+                       && point.reference == p.reference) {
+
+                   point.duplicates = null;
+                   points.remove(point);
                }
            }
            return true;
