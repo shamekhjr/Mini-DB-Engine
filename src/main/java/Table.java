@@ -844,12 +844,54 @@ public class Table implements java.io.Serializable {
 
     public Vector<Hashtable<String, Object>> selectFromTable(SQLTerm[] queries, String[] operations) throws DBAppException {
         Vector<Hashtable<String, Object>> result = new Vector<>();
-        // TODO search for compatible index
-        if (true) { // if a compatible one found
-            // load from disk
 
-            // search for
-        } else { // load all pages and perform operation
+        if (queries.length > 3) { // if a compatible one found
+            Hashtable<String, Object> cols = new Hashtable<>();
+            for (String col: cslsColNames) {
+                cols.put(col, 0);
+            }
+            Hashtable<String, Object> indices = getRelevantIndices(cols);
+            Vector<OctTree> octTrees = new Vector<>();
+            for (String indexName: indices.keySet()){
+                if (!indexName.equals("max")) {
+                    octTrees.add(OctTree.deserializeIndex(indexName));
+                }
+            }
+
+            for (int i = 0; i < queries.length - 2; i++) {
+                boolean anded = true;
+                for (int k = 0; k < 2; k++) {
+                    if(!operations[i+k].toUpperCase().equals("AND")) {
+                        anded = false;
+                    }
+                }
+                if (anded) {
+                    for (OctTree index : octTrees) {
+                        ConcurrentSkipListSet colNames = new ConcurrentSkipListSet();
+                        for (int j = 0; j < index.colNamesDatatypes.length; j++) {
+                            colNames.add(index.colNamesDatatypes[i][0]);
+                        }
+
+                        if (colNames.contains(queries[i]._strColumnName) &&
+                                colNames.contains(queries[i + 1]._strColumnName) &&
+                                colNames.contains(queries[i + 2]._strColumnName)) {
+                            // use this index and get results
+                            i+=2;
+                        }
+                    }
+                }
+            }
+
+
+            //if an entry in the table is found to satisfy the SQL terms after performing the operation, return them (general goal)
+
+            // 1- load page(s) from disk
+            // 2- evaluate the SQL expression
+            // 3- search for the relevant entries
+            // 4-
+        }
+
+        else { // load all pages and perform operation
             for (int i = 0; i < iNumOfPages; i++) {
                 // load (de-serialize the page)
                 Page pCurrentPage = new Page(sTableName, sClusteringKey, i, true);

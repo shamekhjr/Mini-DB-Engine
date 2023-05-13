@@ -1,6 +1,7 @@
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentMap;
 
@@ -36,7 +37,9 @@ public class OctTreeNode  implements Serializable {
    }
 
    public void sethMinMaxPerColumn(Hashtable<String, Pair<Comparable, Comparable>> in) {
-       this.hMinMaxPerColumn = in;
+       for (String key: in.keySet()) {
+           this.hMinMaxPerColumn.put(key, in.get(key));
+       }
    }
 
    public void insert(Point p) { // finds the not full wrapping OctTreeNode and inserts, insert/subdivide-&-insert
@@ -92,8 +95,8 @@ public class OctTreeNode  implements Serializable {
    }
 
    public void subdivide() {
-       for (int i = 0; i < colNamesDatatypes.length; i++) {
-           children[i] = new OctTreeNode(colNamesDatatypes, null, maxEntries);
+       for (int i = 0; i < 8; i++) {
+           children[i] = new OctTreeNode(colNamesDatatypes, new Hashtable<>(), maxEntries);
        }
 
        // col1 = x, col2 = y, col3 = z
