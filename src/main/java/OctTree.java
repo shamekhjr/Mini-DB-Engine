@@ -307,6 +307,28 @@ public class OctTree implements Serializable {
         return resultPagePK;
     }
 
+    public void updateShiftedRecords(Hashtable<String, Object> htblColNameValue, Object pk, int newReference) {
+       Comparable[] cols = new Comparable[3];
+       for (int i = 0; i < colNamesDatatypes.length; i++) {
+           cols[i] = (Comparable) htblColNameValue.get(colNamesDatatypes[i][0]);
+       }
+
+       Vector<OctTreeNode> node = root.searchThreeColumns(cols[0], cols[1], cols[2]);
+       for (Point p : node.firstElement().points) {
+           if (p.pkValue.equals(pk)) {
+               p.reference = newReference;
+               return;
+           } else {
+               for (Point duplicate : p.duplicates) {
+                   if (duplicate.pkValue.equals(pk)) {
+                       duplicate.reference = newReference;
+                       return;
+                   }
+               }
+           }
+       }
+    }
+
     public void serializeIndex () {
         try {
             FileOutputStream fos = new FileOutputStream("src/main/resources/indices/" + sIndexName + ".class");
