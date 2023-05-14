@@ -278,7 +278,7 @@ public class OctTreeNode  implements Serializable {
        for (int i = 1; i <= N; i++) {
            sb.append((char)(a1[i] + 97));
        }
-         return sb.toString();
+       return sb.toString();
 
    }
 
@@ -293,6 +293,8 @@ public class OctTreeNode  implements Serializable {
                }
            }
        }
+
+       points.clear(); // delete points from the parent node
    }
 
    public void insertInChildren(Point p) {

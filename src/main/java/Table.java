@@ -623,7 +623,7 @@ public class Table implements java.io.Serializable {
             // If the user tried to update a record with invalid primary key
             //System.out.println(v.size());
             if (v.isEmpty()) {
-//            throw new DBAppException("Primary Key does not exists");
+                // throw new DBAppException("Primary Key does not exists");
                 return;
             }
 
@@ -844,8 +844,9 @@ public class Table implements java.io.Serializable {
 
     public Vector<Hashtable<String, Object>> selectFromTable(SQLTerm[] queries, String[] operations) throws DBAppException {
         Vector<Hashtable<String, Object>> result = new Vector<>();
+        boolean linear = true;
 
-        if (queries.length > 3) { // if a compatible one found
+        if (queries.length > 3) { // search for indices
             Hashtable<String, Object> cols = new Hashtable<>();
             for (String col: cslsColNames) {
                 cols.put(col, 0);
@@ -858,6 +859,8 @@ public class Table implements java.io.Serializable {
                 }
             }
 
+            Vector<Hashtable<String,Object>> parsedQueries = new Vector<>(); // could contain SQLTerm or Hashtable of index name and results
+
             for (int i = 0; i < queries.length - 2; i++) {
                 boolean anded = true;
                 for (int k = 0; k < 2; k++) {
@@ -866,6 +869,7 @@ public class Table implements java.io.Serializable {
                     }
                 }
                 if (anded) {
+                    boolean foundIndex = false;
                     for (OctTree index : octTrees) {
                         ConcurrentSkipListSet colNames = new ConcurrentSkipListSet();
                         for (int j = 0; j < index.colNamesDatatypes.length; j++) {
@@ -875,10 +879,47 @@ public class Table implements java.io.Serializable {
                         if (colNames.contains(queries[i]._strColumnName) &&
                                 colNames.contains(queries[i + 1]._strColumnName) &&
                                 colNames.contains(queries[i + 2]._strColumnName)) {
+                            linear = false; // no linear search
+                            foundIndex = true;
                             // use this index and get results
-                            i+=2;
+                            SQLTerm[] indexQueries = new SQLTerm[3];
+                            for (int j = 0; j < 3; j++) {
+                                indexQueries[j] = queries[i + j];
+                            }
+                            Vector<Pair<Integer, Comparable>> indexPageResults = index.search(indexQueries);
+                            Vector<Hashtable<String, Object>> indexResultsHT = new Vector<>();
+                            // BS on each page
+                            int oldPage = (indexPageResults.size() > 0) ? indexPageResults.get(0).val1 : -1;
+                            Page currPage = null;
+                            for(Pair<Integer, Comparable> pageRecord: indexPageResults) {
+                                if (pageRecord.val1 != oldPage) { // only load the page it is different from the loaded one
+                                    currPage = new Page(sTableName, sClusteringKey, pageRecord.val1, true);
+                                }
+                                int lo = 0;
+                                int hi = currPage.size() - 1;
+                                while (lo <= hi) {
+                                    int mid = (lo + hi) / 2;
+                                    if (((Comparable) currPage.vRecords.get(mid).get(sClusteringKey)).compareTo(pageRecord.val2) < 0) {
+                                        lo = mid + 1;
+                                    } else if (((Comparable) currPage.vRecords.get(mid).get(sClusteringKey)).compareTo(pageRecord.val2) > 0) {
+                                        hi = mid - 1;
+                                    } else { // found the record
+                                        indexResultsHT.add(currPage.vRecords.get(mid));
+                                    }
+                                }
+                            }
+                            parsedQueries.add(new Hashtable<>() {{put("result", indexResultsHT);}});
+                            i += 2;
+                            break; //exit index search for these 3 cols
                         }
                     }
+                    if (!foundIndex) {
+                        int finalI = i;
+                        parsedQueries.add(new Hashtable<>() {{put("term", queries[finalI]);}});
+                    }
+                } else {
+                    int finalI = i;
+                    parsedQueries.add(new Hashtable<>() {{put("term", queries[finalI]);}});
                 }
             }
 
@@ -891,7 +932,7 @@ public class Table implements java.io.Serializable {
             // 4-
         }
 
-        else { // load all pages and perform operation
+        if (linear) { // load all pages and perform operation
             for (int i = 0; i < iNumOfPages; i++) {
                 // load (de-serialize the page)
                 Page pCurrentPage = new Page(sTableName, sClusteringKey, i, true);
