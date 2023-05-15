@@ -223,8 +223,6 @@ public class Table implements java.io.Serializable {
     }
 
     public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
-
-
         int deletedRecords = 0;
         boolean hasIndex = false;
         //HashSet<String> indexCols = new HashSet<String>(); //store names of cols with an index
@@ -878,7 +876,7 @@ public class Table implements java.io.Serializable {
 
                         if (colNames.contains(queries[i]._strColumnName) &&
                                 colNames.contains(queries[i + 1]._strColumnName) &&
-                                colNames.contains(queries[i + 2]._strColumnName)) {
+                                colNames.contains(queries[i + 2]._strColumnName)) { // found a compatible index!
                             linear = false; // no linear search
                             foundIndex = true;
                             // use this index and get results
@@ -923,13 +921,159 @@ public class Table implements java.io.Serializable {
                 }
             }
 
+            // filter results by terms
+            if (parsedQueries.size() > 0 && !linear) {
+                Vector<Hashtable<String,Object>> filteredResults = new Vector<>();
+                int oprIndex = 0;
+                Vector<SQLTerm> sqlTerms = new Vector<>();
+                Vector<String> netOperators = new Vector<>();
+                boolean first = false;
+                for (Hashtable<String, Object> curRes: parsedQueries) {
+                    if (curRes.containsKey("term")) {
+                        sqlTerms.add((SQLTerm) curRes.get("term"));
+                    } else {
+                        Vector<Hashtable<String, Object>> indexResults = new Vector<>();
+                        String[] currOperations = new String[sqlTerms.size() - 1];
+                        if (sqlTerms.size() > 0) {
+                            if (filteredResults.size() != 0) {
+                                indexResults = (Vector<Hashtable<String, Object>>) filteredResults.get(filteredResults.size() - 1).get("result");
+                                for (int i = 0; i < currOperations.length; i++) {
+                                    currOperations[i] = operations[++oprIndex];
+                                }
+                                  // 2 within index cols
+                                netOperators.add(operations[++oprIndex]);
+                                oprIndex += 2; // skip 2 within net index cols
+                            } else { // no index page on left
+                                indexResults = (Vector<Hashtable<String, Object>>) curRes.get("result");
+                                for (int i = 0; i < currOperations.length; i++) {
+                                    currOperations[i] = operations[oprIndex++];
+                                }
+                                oprIndex += 3;  // 2 within index cols
+                                netOperators.add(operations[oprIndex]);
+                                first = true;
+                            }
+                            Vector<Boolean> operationVector = new Vector<>();
+                            int recIndex = 0;
+                            for (Hashtable<String, Object> indexResult : indexResults) {
+                                // get the boolean value of each query
+                                for (SQLTerm query : sqlTerms) {
+                                    operationVector.add(operate(query._strOperator, indexResult.get(query._strColumnName), query._objValue));
+                                }
 
-            //if an entry in the table is found to satisfy the SQL terms after performing the operation, return them (general goal)
+                                // evaluate the boolean vector from left to right
+                                for (String operator : currOperations) {
+                                    boolean b1 = operationVector.remove(0);
+                                    boolean b2 = operationVector.remove(0);
+                                    switch (operator.toUpperCase()) {
+                                        case "AND":
+                                            operationVector.add(0, b1 && b2);
+                                            break;
+                                        case "OR":
+                                            operationVector.add(0, b1 || b2);
+                                            break;
+                                        case "XOR":
+                                            operationVector.add(0, b1 ^ b2);
+                                            break;
+                                    }
+                                }
 
-            // 1- load page(s) from disk
-            // 2- evaluate the SQL expression
-            // 3- search for the relevant entries
-            // 4-
+                                if (!operationVector.get(0)) { // sql expression evaluated to true with current row
+                                    indexResults.remove(recIndex);
+                                    recIndex--;
+                                }
+
+                                recIndex++;
+                            }
+                            sqlTerms.clear();
+                            Vector<Hashtable<String, Object>> finalIndexResults = indexResults;
+                            if (!first) {
+                                filteredResults.set(finalIndexResults.size()-1, new Hashtable<>() {{put("result", finalIndexResults);}});
+                                filteredResults.add(new Hashtable<>() {{put("result", curRes.get("result"));}});
+                            }
+                            if (first) filteredResults.add(new Hashtable<>() {{put("result", curRes.get("result"));}});
+                        } else { // left Start
+                            Vector<Hashtable<String, Object>> finalIndexResults1 = indexResults;
+                            filteredResults.add(new Hashtable<>() {{put("result", finalIndexResults1);}});
+                            oprIndex += 2;  // 2 within index cols
+                        }
+
+                    }
+                }
+
+                // merge net index results
+                for (String operator : netOperators) {
+                    Vector<Hashtable<String, Object>> r1 = (Vector<Hashtable<String, Object>>) filteredResults.remove(0).get("result");
+                    Vector<Hashtable<String, Object>> r2 = (Vector<Hashtable<String, Object>>) filteredResults.remove(0).get("result");
+                    Hashtable<Object, Hashtable<String,Object>> r1HT = new Hashtable<>();
+                    Hashtable<Object, Hashtable<String,Object>> r2HT = new Hashtable<>();
+                    for (Hashtable<String, Object> ht : r1) {
+                        r1HT.put(ht.get(sClusteringKey), ht);
+                    }
+                    for (Hashtable<String, Object> ht : r2) {
+                        r2HT.put(ht.get(sClusteringKey), ht);
+                    }
+                    switch (operator.toUpperCase()) {
+                        case "AND":
+                            if (r1HT.size() < r2HT.size()) {
+                                for (Object key : r1HT.keySet()) {
+                                    if (!r2HT.containsKey(key)) {
+                                        r1.remove(r1HT.get(key));
+                                    }
+                                }
+                                filteredResults.add(0, new Hashtable<>() {{put("result", r1);}});
+                            } else {
+                                for (Object key : r2HT.keySet()) {
+                                    if (!r1HT.containsKey(key)) {
+                                        r2.remove(r2HT.get(key));
+                                    }
+                                }
+                                filteredResults.add(0, new Hashtable<>() {{put("result", r2);}});
+                            }
+                            break;
+                        case "OR":
+                            if (r1HT.size() > r2HT.size()) {
+                                for (Object key : r2HT.keySet()) {
+                                    r1HT.put(key, r2HT.get(key));
+                                }
+                                Vector<Hashtable<String,Object>> vec = new Vector<>();
+                                for (Object key : r1HT.keySet()) {
+                                    vec.add(r1HT.get(key));
+                                }
+                                filteredResults.add(0, new Hashtable<>() {{put("result", vec);}});
+                            } else {
+                                for (Object key : r1HT.keySet()) {
+                                    r2HT.put(key, r1HT.get(key));
+                                }
+                                Vector<Hashtable<String,Object>> vec = new Vector<>();
+                                for (Object key : r2HT.keySet()) {
+                                    vec.add(r2HT.get(key));
+                                }
+                                filteredResults.add(0, new Hashtable<>() {{put("result", vec);}});
+                            }
+                            break;
+                        case "XOR":
+
+                                for (Object key : r1HT.keySet()) {
+                                    if (r2HT.containsKey(key)) {
+                                        r1.remove(r1HT.get(key));
+                                    }
+                                }
+
+
+                                for (Object key : r2HT.keySet()) {
+                                    if (r1HT.containsKey(key)) {
+                                        r2.remove(r2HT.get(key));
+                                    }
+                                }
+                                r1.addAll(r2);
+                                filteredResults.add(0, new Hashtable<>() {{put("result", r1);}});
+
+                            break;
+                    }
+                }
+                result = (Vector<Hashtable<String, Object>>) filteredResults.get(0).get("result");
+
+            }
         }
 
         if (linear) { // load all pages and perform operation

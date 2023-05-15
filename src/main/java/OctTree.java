@@ -156,13 +156,13 @@ public class OctTree implements Serializable {
         Comparable col3 = null;
         for (String colName: record.val2.keySet()) {
             //if colName is in octree and datatypes match then we can create Comparable to add to Point
-            if (colName.equals(colNamesDatatypes[0][0]) && record.val2.get(colName).getClass().equals(colNamesDatatypes[0][1])) {
+            if (colName.equals(colNamesDatatypes[0][0]) && record.val2.get(colName).getClass().getName().equals(colNamesDatatypes[0][1])) {
                 col1 = (Comparable) record.val2.get(colName);
             }
-            else if (colName.equals(colNamesDatatypes[1][0]) && record.val2.get(colName).getClass().equals(colNamesDatatypes[1][1])) {
+            else if (colName.equals(colNamesDatatypes[1][0]) && record.val2.get(colName).getClass().getName().equals(colNamesDatatypes[1][1])) {
                 col2 = (Comparable) record.val2.get(colName);
             }
-            else if (colName.equals(colNamesDatatypes[2][0]) && record.val2.get(colName).getClass().equals(colNamesDatatypes[2][1])) {
+            else if (colName.equals(colNamesDatatypes[2][0]) && record.val2.get(colName).getClass().getName().equals(colNamesDatatypes[2][1])) {
                 col3 = (Comparable) record.val2.get(colName);
             }
             else {
