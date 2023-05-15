@@ -206,8 +206,10 @@ public class DBApp {
         // 1. Check that 3 SQLTerms are on the same table.
         // Get the Table Name of each SQLTerm
         String tableName = arrSQLTerms[0]._strTableName;
-        if (!tableName.equals(arrSQLTerms[1]._strTableName) || !tableName.equals(arrSQLTerms[2]._strTableName)) {
-            throw new DBAppException("SQLTerms on multiple tables is not allowed.");
+        for (int i = 1; i < arrSQLTerms.length; i++) {
+            if (!tableName.equals(arrSQLTerms[i]._strTableName)) {
+                throw new DBAppException("SQLTerms on multiple tables is not allowed.");
+            }
         }
 
         // 2. Check that the table name exists in the CSV file. (condition2)
@@ -216,48 +218,33 @@ public class DBApp {
             CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
             String[] line;
             SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD", Locale.ENGLISH);
-            boolean condition2 = false;
-            boolean condition3 = false;
-            boolean condSQlTermColName1 = false;
-            boolean condSQlTermColName2 = false;
-            boolean condSQlTermColName3 = false;
+            boolean condition = false;
+            boolean[] found = new boolean[arrSQLTerms.length];
+            for (int i = 0; i < arrSQLTerms.length; i++) {
+                found[i] = false;
+            }
 
             while ((line = reader.readNext()) != null) {
                 if (line[0].equals(tableName)) { // Meet Second Check: Check that the table name exists in the CSV file.
-                    condition2 = true;
+                    condition = true;
                     // 4. Check that the data type of the SQLTerm is convenient to the column's data type.
                     // 5. Check that the value of SQLTerm satisfies the column range.
-                    if (line[1].equals(arrSQLTerms[0]._strColumnName)) {
-                        condSQlTermColName1 = true;
-                        validateDataTypeAndRange(arrSQLTerms[0], line[2], line[6], line[7]);
-                    }
-                    else if (line[1].equals(arrSQLTerms[1]._strColumnName)) {
-                        condSQlTermColName2 = true;
-                        validateDataTypeAndRange(arrSQLTerms[1], line[2], line[6], line[7]);
-                    }
-                    else if (line[1].equals(arrSQLTerms[2]._strColumnName)) {
-                        condSQlTermColName3 = true;
-                        validateDataTypeAndRange(arrSQLTerms[1], line[2], line[6], line[7]);
+                    for (int i = 0; i <arrSQLTerms.length; i++) {
+                        if (line[1].equals(arrSQLTerms[i]._strColumnName)) {
+                            found[i] = true;
+                            validateDataTypeAndRange(arrSQLTerms[i], line[2], line[6], line[7]);
+                        }
                     }
                 }
             }
-          if (condSQlTermColName1 && condSQlTermColName2 && condSQlTermColName3) { // Meet Third Condition: Check that the column exists in the table.
-                condition3 = true;
-            }
 
-          if (!condition2) {
+          if (!condition) {
               throw new DBAppException("Table " + tableName + " does not exist.");
           }
 
-          if (!condition3) {
-              if (!condSQlTermColName1) {
-                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[0]._strColumnName);
-              }
-              if (!condSQlTermColName2) {
-                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[1]._strColumnName);
-              }
-              if (!condSQlTermColName3) {
-                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[2]._strColumnName);
+          for (int i = 0; i < found.length; i++) {
+              if (!found[i]) {
+                  throw new DBAppException("Table " + tableName + " does not contain column " + arrSQLTerms[i]._strColumnName);
               }
           }
         }
