@@ -272,7 +272,7 @@ public class Table implements java.io.Serializable {
 
                 //call deleteAll() from other indices in relIndices
                 for (String indexName : allIndices.keySet()) {
-                    if (!indexName.equals(bestIndex)) {
+                    if (!indexName.equals("max")) {
                         OctTree indexToClear = OctTree.deserializeIndex(indexName);
                         indexToClear.deleteAll();
                     }
