@@ -74,15 +74,15 @@ public class OctTreeNode  implements Serializable {
        if (isLeaf) {
            for (int i = 0; i < points.size(); i++) {
                Point point = points.get(i);
-                   if (point.cols[0].equals(p.cols[0])
-                           && point.cols[1].equals(p.cols[1])
-                           && point.cols[2].equals(p.cols[2])
-                           && point.reference == p.reference) {
+               if (point.cols[0].equals(p.cols[0])
+                       && point.cols[1].equals(p.cols[1])
+                       && point.cols[2].equals(p.cols[2])
+                       && point.reference == p.reference) {
 
-                       point.duplicates = null;
-                       points.remove(point);
-                       i--;
-                   }
+                   point.duplicates = null;
+                   points.remove(point);
+                   i--;
+               }
            }
 
        } else {
