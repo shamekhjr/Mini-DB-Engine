@@ -844,6 +844,7 @@ public class Table implements java.io.Serializable {
         Vector<Hashtable<String, Object>> result = new Vector<>();
         boolean linear = true;
 
+
         if (queries.length > 3) { // search for indices
             Hashtable<String, Object> cols = new Hashtable<>();
             for (String col: cslsColNames) {
@@ -1076,6 +1077,7 @@ public class Table implements java.io.Serializable {
             }
         }
 
+
         if (linear) { // load all pages and perform operation
             for (int i = 0; i < iNumOfPages; i++) {
                 // load (de-serialize the page)
@@ -1085,10 +1087,14 @@ public class Table implements java.io.Serializable {
                 // for each record in page perform boolean operation vector
                 Vector<Boolean> operationVector = new Vector<>();
                 for (Hashtable<String, Object> ht : pCurrentPage.vRecords) {
+                    operationVector.clear();
+
                     // get the boolean value of each query
                     for (SQLTerm query : queries) {
                         operationVector.add(operate(query._strOperator, ht.get(query._strColumnName), query._objValue));
                     }
+
+                    // System.out.println(Arrays.toString(operationVector.toArray()));
 
                     // evaluate the boolean vector from left to right
                     for (String operator: operations) {

@@ -54,23 +54,23 @@ public class OctTree implements Serializable {
                 if (line[1].equals(colNamesDatatypes[0][0])) {
                     colNamesDatatypes[0][1] = line[2];
                     if (colNamesDatatypes[0][1].equals("java.lang.Integer")) {
-                        Integer min = Integer.parseInt(line[7]);
-                        Integer max = Integer.parseInt(line[8]);
+                        Integer min = Integer.parseInt(line[6]);
+                        Integer max = Integer.parseInt(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[0][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[0][1].equals(" java.lang.String")) {
-                        String min = line[7];
-                        String max = line[8];
+                        String min = line[6];
+                        String max = line[7];
                         hMinMaxPerColumn.put(colNamesDatatypes[0][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[0][1].equals("java.lang.Double")) {
-                        Double min = Double.parseDouble(line[7]);
-                        Double max = Double.parseDouble(line[8]);
+                        Double min = Double.parseDouble(line[6]);
+                        Double max = Double.parseDouble(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[0][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[0][1].equals("java.util.Date")) {
-                        Date min = formatter.parse(line[7]);
-                        Date max = formatter.parse(line[8]);
+                        Date min = formatter.parse(line[6]);
+                        Date max = formatter.parse(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[0][0],new Pair(min, max));
                     }
                     else {
@@ -80,23 +80,23 @@ public class OctTree implements Serializable {
                 if (line[1].equals(colNamesDatatypes[1][0])) {
                     colNamesDatatypes[1][1] = line[2];
                     if (colNamesDatatypes[1][1].equals("java.lang.Integer")) {
-                        Integer min = Integer.parseInt(line[7]);
-                        Integer max = Integer.parseInt(line[8]);
+                        Integer min = Integer.parseInt(line[6]);
+                        Integer max = Integer.parseInt(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[1][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[1][1].equals(" java.lang.String")) {
-                        String min = line[7];
-                        String max = line[8];
+                        String min = line[6];
+                        String max = line[7];
                         hMinMaxPerColumn.put(colNamesDatatypes[1][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[1][1].equals("java.lang.Double")) {
-                        Double min = Double.parseDouble(line[7]);
-                        Double max = Double.parseDouble(line[8]);
+                        Double min = Double.parseDouble(line[6]);
+                        Double max = Double.parseDouble(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[1][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[1][1].equals("java.util.Date")) {
-                        Date min = formatter.parse(line[7]);
-                        Date max = formatter.parse(line[8]);
+                        Date min = formatter.parse(line[6]);
+                        Date max = formatter.parse(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[1][0],new Pair(min, max));
                     }
                     else {
@@ -106,23 +106,23 @@ public class OctTree implements Serializable {
                 if (line[1].equals(colNamesDatatypes[2][0])) {
                     colNamesDatatypes[2][1] = line[2];
                     if (colNamesDatatypes[2][1].equals("java.lang.Integer")) {
-                        Integer min = Integer.parseInt(line[7]);
-                        Integer max = Integer.parseInt(line[8]);
+                        Integer min = Integer.parseInt(line[6]);
+                        Integer max = Integer.parseInt(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[2][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[2][1].equals("java.lang.String")) {
-                        String min = line[7];
-                        String max = line[8];
+                        String min = line[6];
+                        String max = line[7];
                         hMinMaxPerColumn.put(colNamesDatatypes[2][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[2][1].equals("java.lang.Double")) {
-                        Double min = Double.parseDouble(line[7]);
-                        Double max = Double.parseDouble(line[8]);
+                        Double min = Double.parseDouble(line[6]);
+                        Double max = Double.parseDouble(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[2][0],new Pair(min, max));
                     }
                     else if (colNamesDatatypes[2][1].equals("java.util.Date")) {
-                        Date min = formatter.parse(line[7]);
-                        Date max = formatter.parse(line[8]);
+                        Date min = formatter.parse(line[6]);
+                        Date max = formatter.parse(line[7]);
                         hMinMaxPerColumn.put(colNamesDatatypes[2][0],new Pair(min, max));
                     }
                     else {
