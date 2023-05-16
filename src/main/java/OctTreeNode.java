@@ -81,6 +81,7 @@ public class OctTreeNode  implements Serializable {
 
                        point.duplicates = null;
                        points.remove(point);
+                       i--;
                    }
            }
 
