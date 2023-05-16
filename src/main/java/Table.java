@@ -450,8 +450,10 @@ public class Table implements java.io.Serializable {
 
                 //update reference number in index (find any point with reference as the old page and change it to the new page)
                 for (String indexName : allIndices.keySet()) {
-                    OctTree indexToClear = OctTree.deserializeIndex(indexName);
-                    indexToClear.updateRefNum(oldIndex, newIndex);
+                    if (!indexName.equals("max")) {
+                        OctTree indexToClear = OctTree.deserializeIndex(indexName);
+                        indexToClear.updateRefNum(oldIndex, newIndex);
+                    }
                 }
 
 

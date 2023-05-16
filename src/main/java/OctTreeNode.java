@@ -72,7 +72,8 @@ public class OctTreeNode  implements Serializable {
 
    public void delete(Point p) {
        if (isLeaf) {
-               for (Point point: points) {
+           for (int i = 0; i < points.size(); i++) {
+               Point point = points.get(i);
                    if (point.cols[0].equals(p.cols[0])
                            && point.cols[1].equals(p.cols[1])
                            && point.cols[2].equals(p.cols[2])
@@ -81,7 +82,7 @@ public class OctTreeNode  implements Serializable {
                        point.duplicates = null;
                        points.remove(point);
                    }
-               }
+           }
 
        } else {
            // find child that wraps e
