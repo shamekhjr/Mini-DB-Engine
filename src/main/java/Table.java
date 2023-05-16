@@ -844,7 +844,25 @@ public class Table implements java.io.Serializable {
         Vector<Hashtable<String, Object>> result = new Vector<>();
         boolean linear = true;
 
+        /* TODO tree printer
+        Hashtable<String, Object> cols = new Hashtable<>();
+        for (String col: cslsColNames) {
+            cols.put(col, 0);
+        }
+        Hashtable<String, Object> indices = getRelevantIndices(cols);
+        Vector<OctTree> octTrees = new Vector<>();
+        for (String indexName: indices.keySet()){
+            if (!indexName.equals("max")) {
+                octTrees.add(OctTree.deserializeIndex(indexName));
+            }
+        }
 
+        for (OctTree o: octTrees) {
+            o.printTree(o.root);
+        }
+        */
+
+        ///*
         if (queries.length > 3) { // search for indices
             Hashtable<String, Object> cols = new Hashtable<>();
             for (String col: cslsColNames) {
@@ -1076,7 +1094,7 @@ public class Table implements java.io.Serializable {
 
             }
         }
-
+        //*/
 
         if (linear) { // load all pages and perform operation
             for (int i = 0; i < iNumOfPages; i++) {

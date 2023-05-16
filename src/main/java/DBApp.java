@@ -53,6 +53,7 @@ public class DBApp {
             Hashtable<String, Object> builtInIndices = tTable.getRelevantIndices(colsOfInterest);
             Vector<OctTree> octTrees = new Vector<>();
 
+            //System.out.println("builtInIndices: " + builtInIndices);
             // Check that all columns that indices are built on contains a value in the inserted record (a.k.a Hashtable). Otherwise, throw a DBAppException.
             for (String key : builtInIndices.keySet()) {
                 if (!key.equals("max")) {
@@ -86,9 +87,10 @@ public class DBApp {
 
             // 7. Call Octree insert and update shifted records.
             int j = 0;
-            for (int i = pageNumber; i < tTable.iNumOfPages - 1; i++) {
+            for (int i = pageNumber; i <= tTable.iNumOfPages - 1; i++) {
                 for (OctTree octTree : octTrees) {
                     if (pageNumber == i) {
+                        //System.out.println("inserting into page " + i);
                         octTree.insert(htblColNameValue, pageNumber, tTable.sClusteringKey);
                     }
                     if (oldPageRowCount.get(pageNumber) == pageMaxEntries) {
@@ -404,16 +406,12 @@ public class DBApp {
 
 
     public static void main(String[] args) throws DBAppException {
-
-        //testing Table class creation
         String strTableName = "Student";
-        DBApp dbApp = new DBApp();
-
-        Hashtable htblColNameType = new Hashtable();
+        DBApp dbApp = new DBApp( );
+        Hashtable htblColNameType = new Hashtable( );
         htblColNameType.put("id", "java.lang.Integer");
         htblColNameType.put("name", "java.lang.String");
         htblColNameType.put("gpa", "java.lang.Double");
-
         Hashtable htblColNameMin = new Hashtable();
         htblColNameMin.put("id", "0");
         htblColNameMin.put("name", "A");
@@ -423,31 +421,96 @@ public class DBApp {
         htblColNameMax.put("id", "1000000000");
         htblColNameMax.put("name", "ZZZZZZZZZZZ");
         htblColNameMax.put("gpa", "4.0");
-
-
         dbApp.createTable(strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax);
-
-        // count time
-        long startTime = System.currentTimeMillis();
-        for (int i = 500; i >= 1; i--) {
-            int finalI = i;
-            dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
-                put("id", finalI);
-                put("name", (finalI >= 100 && finalI <= 200) ? "n1" : (finalI >= 300 && finalI <= 400) ? "n2" : "n3");
-                put("gpa", 0.9);
-            }});
-            System.out.println("inserted " + i);
+        dbApp.createIndex( strTableName, new String[] {"gpa", "id", "name"} );
+    Hashtable htblColNameValue = new Hashtable( );
+    htblColNameValue.put("id", new Integer( 2343432 ));
+    htblColNameValue.put("name", new String("Ahmed Noor" ) );
+    htblColNameValue.put("gpa", new Double( 0.95 ) );
+    dbApp.insertIntoTable( strTableName , htblColNameValue );
+    htblColNameValue.clear( );
+    htblColNameValue.put("id", new Integer( 453455 ));
+    htblColNameValue.put("name", new String("Ahmed Noor" ) );
+    htblColNameValue.put("gpa", new Double( 0.95 ) );
+    dbApp.insertIntoTable( strTableName , htblColNameValue );
+    htblColNameValue.clear( );
+    htblColNameValue.put("id", new Integer( 5674567 ));
+    htblColNameValue.put("name", new String("Dalia Noor" ) );
+    htblColNameValue.put("gpa", new Double( 1.25 ) );
+        dbApp.insertIntoTable( strTableName , htblColNameValue );
+    htblColNameValue.clear( );
+    htblColNameValue.put("id", new Integer( 23498 ));
+    htblColNameValue.put("name", new String("John Noor" ) );
+    htblColNameValue.put("gpa", new Double( 1.5 ) );
+    dbApp.insertIntoTable( strTableName , htblColNameValue );
+    htblColNameValue.clear( );
+    htblColNameValue.put("id", new Integer( 78452 ));
+    htblColNameValue.put("name", new String("Zaky Noor" ) );
+    htblColNameValue.put("gpa", new Double( 0.88 ) );
+    dbApp.insertIntoTable( strTableName , htblColNameValue );
+    SQLTerm[] arrSQLTerms;
+    arrSQLTerms = new SQLTerm[2];
+    for (int i = 0; i < arrSQLTerms.length; i++) {
+        arrSQLTerms[i] = new SQLTerm();
+    }
+    arrSQLTerms[0]._strTableName = "Student";
+    arrSQLTerms[0]._strColumnName= "name";
+    arrSQLTerms[0]._strOperator = "=";
+    arrSQLTerms[0]._objValue = "John Noor";
+    arrSQLTerms[1]._strTableName = "Student";
+    arrSQLTerms[1]._strColumnName= "gpa";
+    arrSQLTerms[1]._strOperator = "=";
+    arrSQLTerms[1]._objValue = new Double( 1.5 );
+    String[]strarrOperators = new String[1];
+    strarrOperators[0] = "OR";
+    Iterator resultSet = dbApp.selectFromTable(arrSQLTerms , strarrOperators);
+        for (Iterator it = resultSet; it.hasNext(); ) {
+            Hashtable<String, Object> ht = (Hashtable<String, Object>) it.next();
+            System.out.println("out -> "+ ht);
         }
-        long endTime = System.currentTimeMillis();
-        System.out.println("Took " + ((endTime - startTime)/1000) + " seconds");
-
-        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
-                put("name", "n1");
-            }});
-
-        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
-            put("name", "n2");
-        }});
+            //testing Table class creation
+//        String strTableName = "Student";
+//        DBApp dbApp = new DBApp();
+//
+//        Hashtable htblColNameType = new Hashtable();
+//        htblColNameType.put("id", "java.lang.Integer");
+//        htblColNameType.put("name", "java.lang.String");
+//        htblColNameType.put("gpa", "java.lang.Double");
+//
+//        Hashtable htblColNameMin = new Hashtable();
+//        htblColNameMin.put("id", "0");
+//        htblColNameMin.put("name", "A");
+//        htblColNameMin.put("gpa", "0.0");
+//
+//        Hashtable htblColNameMax = new Hashtable();
+//        htblColNameMax.put("id", "1000000000");
+//        htblColNameMax.put("name", "ZZZZZZZZZZZ");
+//        htblColNameMax.put("gpa", "4.0");
+//
+//
+//        dbApp.createTable(strTableName, "id", htblColNameType, htblColNameMin, htblColNameMax);
+//
+//        // count time
+//        long startTime = System.currentTimeMillis();
+//        for (int i = 500; i >= 1; i--) {
+//            int finalI = i;
+//            dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
+//                put("id", finalI);
+//                put("name", (finalI >= 100 && finalI <= 200) ? "n1" : (finalI >= 300 && finalI <= 400) ? "n2" : "n3");
+//                put("gpa", 0.9);
+//            }});
+//            System.out.println("inserted " + i);
+//        }
+//        long endTime = System.currentTimeMillis();
+//        System.out.println("Took " + ((endTime - startTime)/1000) + " seconds");
+//
+//        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+//                put("name", "n1");
+//            }});
+//
+//        dbApp.deleteFromTable(strTableName, new Hashtable<String, Object>() {{
+//            put("name", "n2");
+//        }});
 
 //        for (int i = 200; i >= 100; i--) {
 //            int finalI = i;
@@ -459,8 +522,8 @@ public class DBApp {
 //            System.out.println("deleted " + i);
 //        }
 
-        //Table t = Table.loadTable("Student");
-        //t.showPage(0);
+            //Table t = Table.loadTable("Student");
+            //t.showPage(0);
 
 //        dbApp.insertIntoTable(strTableName, new Hashtable<String, Object>() {{
 //            put("id", 2);
@@ -510,8 +573,8 @@ public class DBApp {
 //        }});
 
 
-        Table t = Table.loadTable("Student");
-        t.showPage(0);
+            Table t = Table.loadTable("Student");
+            t.showPage(0);
 
 //        dbApp.updateTable(strTableName, "2", new Hashtable<String, Object>() {{
 //            put("gpa", 0.01);
@@ -532,11 +595,11 @@ public class DBApp {
 //            put("gpa", 2.0);
 //        }});
 
-        t.showPage(0);
-        //t.deleteTable();
-        //clearCSV();
+            //t.showPage(0);
+            //t.deleteTable();
+            //clearCSV();
 
-    }
+        }
 
     public static boolean isValidForDeletion(String strTableName, Hashtable<String, Object> htblColNameValue) throws  DBAppException {
 
