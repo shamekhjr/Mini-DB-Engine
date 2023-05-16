@@ -8,6 +8,7 @@ public class Point implements Serializable {
     Comparable pkValue; // useful when updating
 
     public Point(Comparable col1, Comparable col2, Comparable col3, int reference, Comparable pkValue) {
+        this.cols = new Comparable[3];
         this.cols[0] = col1;
         this.cols[1] = col2;
         this.cols[2] = col3;

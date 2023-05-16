@@ -357,4 +357,13 @@ public class OctTree implements Serializable {
         }
     }
 
+    public void printTree(OctTreeNode root) {
+        if (root == null)
+            return;
+        root.printNode();
+        for (OctTreeNode child : root.children) {
+            printTree(child);
+        }
+    }
+
 }

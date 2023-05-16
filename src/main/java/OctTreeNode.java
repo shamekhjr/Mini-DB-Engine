@@ -572,4 +572,16 @@ public class OctTreeNode  implements Serializable {
             }
         }
     }
+
+    public void printNode() {
+        // print node as in a tree
+        System.out.println("===================");
+        System.out.print("|");
+        for (Point p: points) {
+            System.out.print(p.pkValue + ", ");
+        }
+        System.out.println("|");
+        System.out.println("===================");
+
+    }
 }
