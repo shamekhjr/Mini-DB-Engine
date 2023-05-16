@@ -447,7 +447,16 @@ public class DBApp {
     htblColNameValue.put("id", new Integer( 78452 ));
     htblColNameValue.put("name", new String("Zaky Noor" ) );
     htblColNameValue.put("gpa", new Double( 0.88 ) );
+        dbApp.insertIntoTable( strTableName , htblColNameValue );
+        htblColNameValue.clear( );
+        htblColNameValue.put("id", new Integer( 23143 ));
+        htblColNameValue.put("name", new String("Lmao Noor" ) );
+        htblColNameValue.put("gpa", new Double( 0.83 ) );
     dbApp.insertIntoTable( strTableName , htblColNameValue );
+        htblColNameValue.clear( );
+        htblColNameValue.put("id", new Integer( 23498 ));
+    dbApp.deleteFromTable( strTableName , htblColNameValue );
+
     SQLTerm[] arrSQLTerms;
     arrSQLTerms = new SQLTerm[2];
     for (int i = 0; i < arrSQLTerms.length; i++) {

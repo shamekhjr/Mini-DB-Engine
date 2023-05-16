@@ -230,6 +230,7 @@ public class Table implements java.io.Serializable {
         String bestIndex = ""; //name of the best index to use
 
         Hashtable<String, Object> relIndices = getRelevantIndices(htblColNameValue);
+        //System.out.println(relIndices);
         Hashtable<String, Object> allIndices = getRelevantIndices(colNames);
         if (!relIndices.isEmpty()) { //there are useful indices
             hasIndex = true;
@@ -237,7 +238,7 @@ public class Table implements java.io.Serializable {
 
             //find col names of that index
             try {
-                CSVReader reader = new CSVReader(new FileReader("data/metadata.csv"));
+                CSVReader reader = new CSVReader(new FileReader("src/main/resources/metadata.csv"));
 
                 String[] nextLine;
                 while ((nextLine = reader.readNext()) != null) {
@@ -302,22 +303,24 @@ public class Table implements java.io.Serializable {
                         allPts.add(p);
                     }
                     for (Point p: allPts) {
-
                         Page pPage = new Page(strTableName, sClusteringKey, p.reference, true);
-                        if (htblColNameValue.containsKey(sClusteringKey)) {
+                        if (htblColNameValue.containsKey(sClusteringKey) ) {
                             // binary search on the page
-                            int lo = 0;
-                            int hi = pPage.size() - 1;
-                            while (lo <= hi) {
-                                int mid = (lo + hi) / 2;
-                                if (((Comparable) pPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) < 0) {
-                                    lo = mid + 1;
-                                } else if (((Comparable) pPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) > 0) {
-                                    hi = mid - 1;
-                                } else { // found the record
-                                    Hashtable<String, Object> hTemp = pPage.vRecords.get(mid);
-                                    vRelevantRecords.add(new Pair<Pair<Integer, Integer>, Hashtable<String, Object>>(new Pair<Integer, Integer>(p.reference, mid), hTemp));
-                                    break;
+                            if ( p.pkValue.equals(htblColNameValue.get(sClusteringKey))) {
+                                int lo = 0;
+                                int hi = pPage.size() - 1;
+                                while (lo <= hi) {
+                                    int mid = (lo + hi) / 2;
+                                    if (((Comparable) pPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) < 0) {
+                                        lo = mid + 1;
+                                    } else if (((Comparable) pPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) > 0) {
+                                        hi = mid - 1;
+                                    } else { // found the record
+                                        Hashtable<String, Object> hTemp = pPage.vRecords.get(mid);
+                                        //System.out.println(hTemp);
+                                        vRelevantRecords.add(new Pair<Pair<Integer, Integer>, Hashtable<String, Object>>(new Pair<Integer, Integer>(p.reference, mid), hTemp));
+                                        break;
+                                    }
                                 }
                             }
 
@@ -345,6 +348,8 @@ public class Table implements java.io.Serializable {
         } else {
             vRelevantRecords = searchRecords(htblColNameValue);
         }
+
+        System.out.println(Arrays.toString(vRelevantRecords.toArray()));
 
 
         if (vRelevantRecords.isEmpty()) {
@@ -386,8 +391,10 @@ public class Table implements java.io.Serializable {
 
             //load octtrees and call delete on all of them to delete that point
             for (String indexName : allIndices.keySet()) {
-                OctTree indexToClear = OctTree.deserializeIndex(indexName);
-                indexToClear.delete(vRelevantRecords.get(i));
+                if (!indexName.equals("max")) {
+                    OctTree indexToClear = OctTree.deserializeIndex(indexName);
+                    indexToClear.delete(vRelevantRecords.get(i));
+                }
             }
 
 
@@ -684,6 +691,10 @@ public class Table implements java.io.Serializable {
                                     result.put(line[4], newCount);
                                 } else {
                                     result.put(line[4], 1);
+                                    if (maxIndex.equals("")) {
+                                        maxIndex = line[4];
+                                        max = 1;
+                                    }
                                 }
                             }
                         }
