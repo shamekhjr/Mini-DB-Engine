@@ -590,7 +590,8 @@ public class Table implements java.io.Serializable {
         if (applicableSearchIndex) {
             // load the index
             OctTree index = OctTree.deserializeIndex(applicableIndexName);
-            int pageNum = index.getPageByPkAndUpdate(sClusteringKey, ((Comparable) htblColNameValue.get(sClusteringKey)), htblColNameValue);
+            int pageNum = index.getPageByPkAndUpdate(sClusteringKey, ((Comparable) hCondition.get(sClusteringKey)), htblColNameValue);
+            //System.out.println(pageNum);
             if (pageNum == -1) {
                 return; // pk not found
             }
@@ -602,20 +603,23 @@ public class Table implements java.io.Serializable {
             int hi = targetPage.size() - 1;
             while (lo <= hi) {
                 int mid = (lo + hi) / 2;
-                if (((Comparable) targetPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) < 0) {
+                if (((Comparable) targetPage.vRecords.get(mid).get(sClusteringKey)).compareTo(hCondition.get(sClusteringKey)) < 0) {
                     lo = mid + 1;
-                } else if (((Comparable) targetPage.vRecords.get(mid).get(sClusteringKey)).compareTo(htblColNameValue.get(sClusteringKey)) > 0) {
+                } else if (((Comparable) targetPage.vRecords.get(mid).get(sClusteringKey)).compareTo(hCondition.get(sClusteringKey)) > 0) {
                     hi = mid - 1;
                 } else { // found the record
                     Hashtable<String, Object> hTemp = targetPage.vRecords.get(mid);
+
 
                     // Step 3: Update the record
                     for (String key : htblColNameValue.keySet()) {
                         hTemp.put(key, htblColNameValue.get(key));
                     }
+                    //System.out.println("updated record: " + hTemp);
 
                     // Step 4: Serialize the page
                     targetPage.serializePage();
+                    break;
                 }
             }
             index.serializeIndex();
@@ -655,7 +659,7 @@ public class Table implements java.io.Serializable {
             // check if the index is applicable for search (contains the clustering key)
             if (!indexName.substring(0,3).equals("pk_") && !indexName.equals("max")) {
                 OctTree index = OctTree.deserializeIndex(indexName);
-                index.updateIndex(sClusteringKey, ((Comparable) htblColNameValue.get(sClusteringKey)), htblColNameValue);
+                index.updateIndex(sClusteringKey, ((Comparable) hCondition.get(sClusteringKey)), htblColNameValue);
                 index.serializeIndex();
             }
         }
