@@ -43,13 +43,16 @@ public class OctTreeNode  implements Serializable {
    }
 
    public void insert(Point p) { // finds the not full wrapping OctTreeNode and inserts, insert/subdivide-&-insert
+       //System.out.println("Inserting " + p.toString() + " into " + this.toString());
        if(!isLeaf) {
            for (OctTreeNode child: children) { // find child that wraps p
                if (child.wraps(p)) {
                    child.insert(p);
+                   //System.out.println("Wrapping found Inserting " + p.toString() + " into " + this.toString());
                    break;
                }
            }
+           //System.out.println("No wrapping found");
        } else {
            if (this.wraps(p)) {
                for (Point entry: points) { // check if it is a duplicate
@@ -60,12 +63,15 @@ public class OctTreeNode  implements Serializable {
                }
                if (points.size() < maxEntries) { // check if space
                    points.add(p);
+                   //System.out.println("Inserted " + p.toString() + " into " + this.toString());
                } else { // node is full, split
                    subdivide();
                    distribute();
                    this.isLeaf = false;
                    this.insert(p);
                }
+           } else {
+               //System.out.println("Point " + p.toString() + " does not belong in " + this.toString());
            }
        }
    }
@@ -80,6 +86,7 @@ public class OctTreeNode  implements Serializable {
                        && point.reference == p.reference) {
 
                    point.duplicates = null;
+                   System.out.println("DELETED!");
                    points.remove(point);
                    i--;
                }
@@ -99,6 +106,7 @@ public class OctTreeNode  implements Serializable {
    public void subdivide() {
        for (int i = 0; i < 8; i++) {
            children[i] = new OctTreeNode(colNamesDatatypes, new Hashtable<>(), maxEntries);
+           children[i].isLeaf = true;
        }
 
        // col1 = x, col2 = y, col3 = z
@@ -108,7 +116,7 @@ public class OctTreeNode  implements Serializable {
            if (colData[1].equals("java.lang.Integer")) {
                Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
                int min = (int) minMax.val1;
-               int max = (int) minMax.val1;
+               int max = (int) minMax.val2;
 
                // get mid from min and max
                int mid = min + (max - min) / 2;
@@ -140,7 +148,7 @@ public class OctTreeNode  implements Serializable {
            else if (colData[1].equals("java.lang.String")) {
                Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
                String Min = (String) minMax.val1;
-               String max = (String) minMax.val1;
+               String max = (String) minMax.val2;
                Min = concatExtra(Min, max);
 
                // get mid from min and max
@@ -174,7 +182,7 @@ public class OctTreeNode  implements Serializable {
            else if (colData[1].equals("java.lang.Double")) {
                Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
                double min = (double) minMax.val1;
-               double max = (double) minMax.val1;
+               double max = (double) minMax.val2;
 
                // get mid from min and max
                double mid = min + (max - min) / 2.0;
@@ -207,7 +215,7 @@ public class OctTreeNode  implements Serializable {
            else if (colData[1].equals("java.util.Date")) {
                Pair<Comparable, Comparable> minMax = hMinMaxPerColumn.get(colData[0]);
                Date min = (Date) minMax.val1;
-               Date max = (Date) minMax.val1;
+               Date max = (Date) minMax.val2;
 
                // get mid from min and max
                Date mid = new Date((min.getTime() + max.getTime()) / 2);
@@ -580,9 +588,13 @@ public class OctTreeNode  implements Serializable {
         System.out.println("===================");
         System.out.print("|");
         for (Point p: points) {
-            System.out.print(p.pkValue + ", ");
+            //System.out.print(p.pkValue + ", ");
+            System.out.println(p + " pk: "+ p.pkValue);
+            //System.out.print(p.duplicates);
+
         }
         System.out.println("|");
+        System.out.println("Ranges: " + hMinMaxPerColumn);
         System.out.println("===================");
 
     }

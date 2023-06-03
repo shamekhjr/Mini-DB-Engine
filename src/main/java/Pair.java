@@ -6,4 +6,8 @@ public class Pair<V1, V2> implements java.io.Serializable {
         this.val1 = val1;
         this.val2 = val2;
     }
+
+    public String toString() {
+        return this.val1 + " " + this.val2;
+    }
 }

@@ -361,6 +361,7 @@ public class DBApp {
                     }
                 }
                 octTree.insert(record, i, t.sClusteringKey);
+                //System.out.println("Inserted record " + record + " into octree");
             }
             p = null;
             System.gc();
@@ -368,6 +369,7 @@ public class DBApp {
 
         // save the index on disk
         octTree.serializeIndex();
+
 
         // update the metadata file
         try {
@@ -405,7 +407,8 @@ public class DBApp {
     }
 
 
-    public static void main(String[] args) throws DBAppException {
+    public static void main(String[] args) throws Exception {
+        /*
         String strTableName = "Student";
         DBApp dbApp = new DBApp( );
         Hashtable htblColNameType = new Hashtable( );
@@ -456,6 +459,12 @@ public class DBApp {
         htblColNameValue.clear( );
         htblColNameValue.put("id", new Integer( 23498 ));
     dbApp.deleteFromTable( strTableName , htblColNameValue );
+        htblColNameValue.clear( );
+        htblColNameValue.put("id", new Integer( 78452 ));
+        htblColNameType.clear();
+        htblColNameType.put("name", new String("Omar Nour" ));
+
+        dbApp.updateTable( strTableName , "453455", htblColNameType );
 
     SQLTerm[] arrSQLTerms;
     arrSQLTerms = new SQLTerm[2];
@@ -608,7 +617,120 @@ public class DBApp {
             //t.deleteTable();
             //clearCSV();
 
-        }
+         */
+        DBApp db = new DBApp();
+//        Final_Project dbApp = new Final_Project();
+//
+//        dbApp.createCoursesTable(db);
+//        dbApp.createPCsTable(db);
+//        dbApp.createTranscriptsTable(db);
+//        dbApp.createStudentTable(db);
+//        dbApp.insertPCsRecords(db,200);
+//        dbApp.insertTranscriptsRecords(db,200);
+//        dbApp.insertStudentRecords(db,200);
+//        dbApp.insertCoursesRecords(db,200);
+//        String table = "students";
+       //Hashtable<String, Object> row = new Hashtable();
+//        row.put("id", 123);
+//
+//        row.put("first_name", "foo");
+//        row.put("last_name", "bar");
+//
+//        Date dob = new Date(1995 - 1900, 4 - 1, 1);
+//        row.put("dob", dob);
+//        row.put("gpa", 1.1);
+//        String table = "transcripts";
+//        Hashtable<String, Object> row = new Hashtable();
+//        row.put("gpa", 1.5);
+//        row.put("student_id", "44-9874");
+        //row.put("course_name", "bar");
+        //row.put("elective", true);
+
+        //db.insertIntoTable(table, row);
+        Hashtable<String, Object> row = new Hashtable();
+        String table = "students";
+
+        //row.put("first_name", "noura");
+        //row.put("last_name", "sadek");
+        row.put("id", "54-9948");
+
+        //Date dob = new Date(1992 - 1900, 9 - 1, 8);
+        //row.put("dob", dob);
+        //row.put("gps", 1.1);
+
+        //db.updateTable(table, "47-7573", row);
+        //String[] colNames = {"first_name", "last_name", "gpa"};
+        //db.createIndex(table, colNames);
+        //db.deleteFromTable(table, row);
+//        Table students = Table.loadTable("students");
+//        for (int i = 0; i < students.vNumberOfRowsPerPage.size(); i++) {
+//            students.showPage(i);
+//        }
+        OctTree index = OctTree.deserializeIndex("first_namelast_namegpa");
+//        for (OctTreeNode node : index.root.children) {
+//            System.out.println(node.points);
+//        }
+        //System.out.println(Arrays.toString(index.root.children));
+//        for (Point p: index.root.points) {
+//            System.out.println("-"+p);
+//        }
+        index.insert(new Hashtable<String, Object>(){{
+            put("first_name", "uvRhTC");
+            put("last_name", "gOgOWT");
+            put("gpa",4.74);
+        }},0, "id");
+//        index.updateIndex("id", "55-2235", new Hashtable<String, Object>(){{
+//            put("first_name", "noura");
+//        }});
+
+        Table t = Table.loadTable("students");
+        t.updateTable("47-7573", new Hashtable<String, Object>(){{
+            put("first_name", "nourb");
+        }});
+        //noura piQJLG 4.62 0 pk: 55-2235
+        t.deleteFromTable("students", new Hashtable<String, Object>(){{
+            put("id", "71-5689");
+        }});
+
+        index.serializeIndex();
+
+
+//        index.insert(new Hashtable<String, Object>(){{
+//            put("first_name", "uvRhTC");
+//            put("last_name", "gOgOWT");
+//            put("gpa",4.75);
+//        }},0, "id");
+//        index.insert(new Hashtable<String, Object>(){{
+//            put("first_name", "uvRhTC");
+//            put("last_name", "gOgOWT");
+//            put("gpa",4.76);
+//        }},0, "id");
+        index.printTree(index.root);
+//        SQLTerm[] arrSQLTerms;
+//        arrSQLTerms = new SQLTerm[] {new SQLTerm(), new SQLTerm(), new SQLTerm()};
+//        arrSQLTerms[0]._strTableName = "students";
+//        arrSQLTerms[0]._strColumnName= "first_name";
+//        arrSQLTerms[0]._strOperator = "<";
+//        arrSQLTerms[0]._objValue = "xxxxxx";
+//        arrSQLTerms[1]._strTableName = "students";
+//        arrSQLTerms[1]._strColumnName= "last_name";
+//        arrSQLTerms[1]._strOperator = ">";
+//        arrSQLTerms[1]._objValue = "mmmmmmm";
+//        arrSQLTerms[2]._strTableName = "students";
+//        arrSQLTerms[2]._strColumnName= "gpa";
+//        arrSQLTerms[2]._strOperator = "<";
+//        arrSQLTerms[2]._objValue = new Double( 1.2 );
+//        String[]strarrOperators = new String[] {new String(), new String()};
+//        strarrOperators[0] = "AND";
+//        strarrOperators[1] = "AND";
+//// select * from Student where name = “John Noor” or gpa = 1.5;
+//        Iterator resultSet = db.selectFromTable(arrSQLTerms , strarrOperators);
+//        while (resultSet.hasNext()) {
+//            System.out.println(resultSet.next());
+//        }
+        //db.selectFromTable(new SQLTerm[]{new SQLTerm()}, new String[]{}, "students");
+
+    }
 
     public static boolean isValidForDeletion(String strTableName, Hashtable<String, Object> htblColNameValue) throws  DBAppException {
 

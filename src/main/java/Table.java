@@ -937,6 +937,7 @@ public class Table implements java.io.Serializable {
                                         hi = mid - 1;
                                     } else { // found the record
                                         indexResultsHT.add(currPage.vRecords.get(mid));
+                                        System.out.println("I used the index!");
                                     }
                                 }
                             }
