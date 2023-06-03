@@ -878,7 +878,7 @@ public class Table implements java.io.Serializable {
         */
 
         ///*
-        if (queries.length > 3) { // search for indices
+        if (queries.length >= 3) { // search for indices
             Hashtable<String, Object> cols = new Hashtable<>();
             for (String col: cslsColNames) {
                 cols.put(col, 0);
@@ -905,7 +905,7 @@ public class Table implements java.io.Serializable {
                     for (OctTree index : octTrees) {
                         ConcurrentSkipListSet colNames = new ConcurrentSkipListSet();
                         for (int j = 0; j < index.colNamesDatatypes.length; j++) {
-                            colNames.add(index.colNamesDatatypes[i][0]);
+                            colNames.add(index.colNamesDatatypes[j][0]);
                         }
 
                         if (colNames.contains(queries[i]._strColumnName) &&
@@ -924,7 +924,7 @@ public class Table implements java.io.Serializable {
                             int oldPage = (indexPageResults.size() > 0) ? indexPageResults.get(0).val1 : -1;
                             Page currPage = null;
                             for(Pair<Integer, Comparable> pageRecord: indexPageResults) {
-                                if (pageRecord.val1 != oldPage) { // only load the page it is different from the loaded one
+                                if (pageRecord.val1 != oldPage || currPage == null) { // only load the page it is different from the loaded one
                                     currPage = new Page(sTableName, sClusteringKey, pageRecord.val1, true);
                                 }
                                 int lo = 0;
@@ -938,6 +938,7 @@ public class Table implements java.io.Serializable {
                                     } else { // found the record
                                         indexResultsHT.add(currPage.vRecords.get(mid));
                                         System.out.println("I used the index!");
+                                        break;
                                     }
                                 }
                             }
@@ -1087,7 +1088,6 @@ public class Table implements java.io.Serializable {
                             }
                             break;
                         case "XOR":
-
                                 for (Object key : r1HT.keySet()) {
                                     if (r2HT.containsKey(key)) {
                                         r1.remove(r1HT.get(key));

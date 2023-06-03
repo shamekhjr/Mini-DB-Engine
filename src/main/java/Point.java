@@ -21,4 +21,8 @@ public class Point implements Serializable {
         Point e = (Point) o;
         return this.cols[0].equals(e.cols[0]) && this.cols[1].equals(e.cols[1]) && this.cols[2].equals(e.cols[2]);
     }
+
+    public String toString() {
+        return this.cols[0] + " " + this.cols[1] + " " + this.cols[2] + " " + this.reference;
+    }
 }

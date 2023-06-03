@@ -666,7 +666,7 @@ public class DBApp {
 //        for (int i = 0; i < students.vNumberOfRowsPerPage.size(); i++) {
 //            students.showPage(i);
 //        }
-        OctTree index = OctTree.deserializeIndex("first_namelast_namegpa");
+        //OctTree index = OctTree.deserializeIndex("first_namelast_namegpa");
 //        for (OctTreeNode node : index.root.children) {
 //            System.out.println(node.points);
 //        }
@@ -674,25 +674,25 @@ public class DBApp {
 //        for (Point p: index.root.points) {
 //            System.out.println("-"+p);
 //        }
-        index.insert(new Hashtable<String, Object>(){{
-            put("first_name", "uvRhTC");
-            put("last_name", "gOgOWT");
-            put("gpa",4.74);
-        }},0, "id");
+//        index.insert(new Hashtable<String, Object>(){{
+//            put("first_name", "uvRhTC");
+//            put("last_name", "gOgOWT");
+//            put("gpa",4.74);
+//        }},0, "id");
 //        index.updateIndex("id", "55-2235", new Hashtable<String, Object>(){{
 //            put("first_name", "noura");
 //        }});
 
-        Table t = Table.loadTable("students");
-        t.updateTable("47-7573", new Hashtable<String, Object>(){{
-            put("first_name", "nourb");
-        }});
-        //noura piQJLG 4.62 0 pk: 55-2235
-        t.deleteFromTable("students", new Hashtable<String, Object>(){{
-            put("id", "71-5689");
-        }});
+//        Table t = Table.loadTable("students");
+//        t.updateTable("47-7573", new Hashtable<String, Object>(){{
+//            put("first_name", "nourb");
+//        }});
+//        //noura piQJLG 4.62 0 pk: 55-2235
+//        t.deleteFromTable("students", new Hashtable<String, Object>(){{
+//            put("id", "71-5689");
+//        }});
 
-        index.serializeIndex();
+        //index.serializeIndex();
 
 
 //        index.insert(new Hashtable<String, Object>(){{
@@ -705,30 +705,30 @@ public class DBApp {
 //            put("last_name", "gOgOWT");
 //            put("gpa",4.76);
 //        }},0, "id");
-        index.printTree(index.root);
-//        SQLTerm[] arrSQLTerms;
-//        arrSQLTerms = new SQLTerm[] {new SQLTerm(), new SQLTerm(), new SQLTerm()};
-//        arrSQLTerms[0]._strTableName = "students";
-//        arrSQLTerms[0]._strColumnName= "first_name";
-//        arrSQLTerms[0]._strOperator = "<";
-//        arrSQLTerms[0]._objValue = "xxxxxx";
-//        arrSQLTerms[1]._strTableName = "students";
-//        arrSQLTerms[1]._strColumnName= "last_name";
-//        arrSQLTerms[1]._strOperator = ">";
-//        arrSQLTerms[1]._objValue = "mmmmmmm";
-//        arrSQLTerms[2]._strTableName = "students";
-//        arrSQLTerms[2]._strColumnName= "gpa";
-//        arrSQLTerms[2]._strOperator = "<";
-//        arrSQLTerms[2]._objValue = new Double( 1.2 );
-//        String[]strarrOperators = new String[] {new String(), new String()};
-//        strarrOperators[0] = "AND";
-//        strarrOperators[1] = "AND";
-//// select * from Student where name = “John Noor” or gpa = 1.5;
-//        Iterator resultSet = db.selectFromTable(arrSQLTerms , strarrOperators);
-//        while (resultSet.hasNext()) {
-//            System.out.println(resultSet.next());
-//        }
-        //db.selectFromTable(new SQLTerm[]{new SQLTerm()}, new String[]{}, "students");
+        //index.printTree(index.root);
+        SQLTerm[] arrSQLTerms;
+        arrSQLTerms = new SQLTerm[] {new SQLTerm(), new SQLTerm(), new SQLTerm()};
+        arrSQLTerms[0]._strTableName = "students";
+        arrSQLTerms[0]._strColumnName= "first_name";
+        arrSQLTerms[0]._strOperator = "<";
+        arrSQLTerms[0]._objValue = "xxxxxx";
+        arrSQLTerms[1]._strTableName = "students";
+        arrSQLTerms[1]._strColumnName= "last_name";
+        arrSQLTerms[1]._strOperator = ">";
+        arrSQLTerms[1]._objValue = "mmmmmmm";
+        arrSQLTerms[2]._strTableName = "students";
+        arrSQLTerms[2]._strColumnName= "gpa";
+        arrSQLTerms[2]._strOperator = "<";
+        arrSQLTerms[2]._objValue = new Double( 1.2 );
+        String[]strarrOperators = new String[] {new String(), new String()};
+        strarrOperators[0] = "AND";
+        strarrOperators[1] = "AND";
+// select * from Student where name = “John Noor” or gpa = 1.5;
+        Iterator resultSet = db.selectFromTable(arrSQLTerms , strarrOperators);
+        while (resultSet.hasNext()) {
+            System.out.println(resultSet.next());
+        }
+        //db.selectFromTable(new SQLTerm[]{new SQLTerm()}, new String[]{});
 
     }
 
