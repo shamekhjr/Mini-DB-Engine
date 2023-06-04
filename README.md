@@ -22,6 +22,10 @@ The engine supports two types of indices:
 
 The tables within the database engine are stored as pages, which correspond to serializable files on secondary storage. This storage design allows for efficient data management and retrieval.
 
+## Multi-threading
+
+The database engine has been designed to support multithreading. All the data structures used within the engine are thread-safe, allowing users to leverage multithreading capabilities when interacting with the database. This enables concurrent access to the database, enhancing performance in scenarios where multiple threads or processes are involved.
+
 ## Optimization
 
 Every aspect of the codebase has been optimized for performance. Careful consideration has been given to optimizing various operations and algorithms to ensure speedy processing and retrieval of data.
