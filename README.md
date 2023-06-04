@@ -29,3 +29,11 @@ The database engine has been designed to support multithreading. All the data st
 ## Optimization
 
 Every aspect of the codebase has been optimized for performance. Careful consideration has been given to optimizing various operations and algorithms to ensure speedy processing and retrieval of data.
+
+## Contributors 
+This project was the issue of a whole semester of tireless work, sleepless nights, dedication and passion of:
+- [Mohamed Shamekh](https://github.com/shamekhjr)
+- [Omar Nour](https://github.com/Omar-Nour)
+- [Ali Abdalwahaab](https://github.com/AliAbdalwahaab)
+- Youssef El-Sharkawy
+- Mazen Soliman
