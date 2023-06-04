@@ -36,4 +36,4 @@ This project was the issue of a whole semester of tireless work, sleepless night
 - [Omar Nour](https://github.com/Omar-Nour)
 - [Ali Abdalwahaab](https://github.com/AliAbdalwahaab)
 - [Youssef El-Sharkawy](https://github.com/Shark23p4)
-- Mazen Soliman
+- [Mazen Soliman](https://github.com/MazenS0liman)
